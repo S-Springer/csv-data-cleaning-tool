@@ -1,0 +1,150 @@
+.data-preview {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 15px;
+}
+
+.preview-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.preview-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.preview-controls label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.preview-controls select {
+  padding: 6px 10px;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.preview-controls select:hover {
+  border-color: #3498db;
+}
+
+.preview-info {
+  font-size: 12px;
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.table-container {
+  overflow-x: auto;
+  border: 1px solid #ecf0f1;
+  border-radius: 6px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.preview-table thead {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+}
+
+.preview-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #bdc3c7;
+  font-size: 13px;
+  text-transform: uppercase;
+  word-break: break-word;
+  max-width: 200px;
+}
+
+.preview-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #ecf0f1;
+  color: #34495e;
+  font-size: 13px;
+  word-break: break-word;
+  max-width: 200px;
+}
+
+.preview-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.preview-table tbody tr:nth-child(odd) {
+  background-color: #fafbfc;
+}
+
+.null-value {
+  color: #95a5a6;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.preview-loading {
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.preview-error {
+  padding: 20px;
+  background-color: #fadbd8;
+  color: #c0392b;
+  border-radius: 8px;
+  margin-top: 20px;
+  border-left: 4px solid #e74c3c;
+}
+
+@media (max-width: 768px) {
+  .preview-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .preview-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .preview-table th,
+  .preview-table td {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .table-container {
+    max-height: 400px;
+  }
+}
