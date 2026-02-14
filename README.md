@@ -7,6 +7,7 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 ✨ **Data Upload**
 - Drag-and-drop CSV file upload
 - Automatic data parsing and basic statistics
+- **Multi-encoding support** (UTF-8, Latin-1, ISO-8859-1, CP1252, UTF-16)
 
 📊 **Data Analysis**
 - Dataset overview (rows, columns, memory usage)
@@ -23,6 +24,12 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 
 ⬇️ **Export**
 - Download cleaned datasets as CSV
+
+🖥️ **Desktop Application**
+- Standalone Windows executable (.exe)
+- No installation required
+- Built-in web UI with native window
+- All features available offline
 
 ## Tech Stack
 
@@ -66,6 +73,8 @@ test_application/
 │   │   └── index.js                 # React entry point
 │   ├── package.json
 │   └── .gitignore
+├── main_win.py                       # Desktop app entry point
+├── .gitignore
 └── README.md
 ```
 
@@ -129,6 +138,40 @@ npm start
 ```
 
 The application will open at `http://localhost:3000`
+
+## Desktop Application (Windows)
+
+### Option 1: Use Pre-built Executable
+
+Simply download and run `csv-data-tool.exe` - no installation required!
+
+### Option 2: Build from Source
+
+1. Build the frontend:
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+2. Activate the backend virtual environment:
+```bash
+cd ../backend
+venv\Scripts\activate  # Windows
+```
+
+3. Build the executable:
+```bash
+cd ..
+pyinstaller --noconfirm --onefile --add-data "frontend\build;frontend\build" --add-data "backend\app;app" --name csv-data-tool main_win.py
+```
+
+4. Run the executable:
+```bash
+.\dist\csv-data-tool.exe
+```
+
+The application will open in a native window with the full web interface embedded.
 
 ## API Endpoints
 
@@ -238,7 +281,13 @@ MIT License - feel free to use this project for learning and development.
 
 For issues or questions, check the code comments or extend with your own features!
 
----
+---2.0  
+**Last Updated**: February 2026
 
+**Recent Updates**:
+- ✅ Windows desktop application with PyInstaller
+- ✅ Multi-encoding CSV support (handles international characters)
+- ✅ Fixed API routing for packaged application
+- ✅ Dynamic API URL resolution for dev/production
 **Version**: 0.1.0  
 **Last Updated**: February 2026

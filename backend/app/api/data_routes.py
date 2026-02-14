@@ -17,11 +17,33 @@ uploaded_data = {}
 async def upload_file(file: UploadFile = File(...)):
     """Upload and parse a CSV file"""
     try:
+        print(f"Received file: {file.filename}, content_type: {file.content_type}")
+        
         if not file.filename.endswith('.csv'):
             raise HTTPException(status_code=400, detail="Only CSV files are supported")
         
         contents = await file.read()
-        df = pd.read_csv(io.BytesIO(contents))
+        print(f"File size: {len(contents)} bytes")
+        
+        # Try multiple encodings to handle different CSV file formats
+        encodings_to_try = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']
+        df = None
+        last_error = None
+        
+        for encoding in encodings_to_try:
+            try:
+                df = pd.read_csv(io.BytesIO(contents), encoding=encoding)
+                print(f"Successfully loaded with {encoding} encoding, shape: {df.shape}")
+                break
+            except (UnicodeDecodeError, Exception) as e:
+                last_error = e
+                continue
+        
+        if df is None:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Failed to decode CSV file. Tried encodings: {', '.join(encodings_to_try)}. Error: {str(last_error)}"
+            )
         
         file_id = file.filename.replace('.csv', '')
         uploaded_data[file_id] = df
@@ -34,7 +56,12 @@ async def upload_file(file: UploadFile = File(...)):
             "message": f"File uploaded: {file.filename}",
             "stats": basic_stats
         }
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error uploading file: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 

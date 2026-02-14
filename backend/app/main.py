@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.api.data_routes import router as data_router
 import numpy as np
+import os
 
 app = FastAPI(
     title="CSV Data Cleaning & Analysis Tool",
@@ -19,19 +21,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Include API routers FIRST (before static files)
 app.include_router(data_router)
-
-
-@app.get("/")
-def read_root():
-    return {
-        "message": "CSV Data Cleaning & Analysis Tool API",
-        "version": "0.1.0",
-        "docs": "/docs"
-    }
 
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+# Mount built frontend LAST (so it doesn't catch API routes)
+static_dir = os.environ.get("STATIC_DIR") or os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'frontend', 'build')
+static_dir = os.path.abspath(static_dir)
+if os.path.isdir(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

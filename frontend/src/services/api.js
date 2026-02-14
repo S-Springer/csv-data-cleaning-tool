@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+// Use relative URL so it works both in development and packaged exe
+const API_BASE_URL = window.location.origin === 'http://localhost:3000' || window.location.origin === 'http://localhost:3001'
+  ? 'http://localhost:8000/api'
+  : '/api';
 
 export const uploadFile = async (file) => {
   const formData = new FormData();

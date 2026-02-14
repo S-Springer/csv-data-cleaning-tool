@@ -21,6 +21,11 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/.DS_Store
 
+# PyInstaller
+build/
+dist/
+*.spec
+
 # General
 .vscode/
 .idea/
