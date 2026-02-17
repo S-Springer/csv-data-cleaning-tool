@@ -1,17 +1,36 @@
-import React, { useState } from 'react';
-import { cleanData, downloadData } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { cleanData, downloadData, previewData } from '../services/api';
 import DataPreview from './DataPreview';
 import './DataCleaner.css';
 
 function DataCleaner({ fileId, onCleanSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [columns, setColumns] = useState([]);
+  const [selectedColumnsToKeep, setSelectedColumnsToKeep] = useState(new Set());
   const [cleanOptions, setCleanOptions] = useState({
     remove_duplicates: false,
     fill_missing: null,
     remove_outliers: false,
+    columns_to_drop: [],
   });
   const [cleanResult, setCleanResult] = useState(null);
+
+  // Fetch column names on component mount
+  useEffect(() => {
+    const fetchColumns = async () => {
+      try {
+        const preview = await previewData(fileId, 1);
+        if (preview.columns) {
+          setColumns(preview.columns);
+          setSelectedColumnsToKeep(new Set(preview.columns)); // Initially select all
+        }
+      } catch (err) {
+        console.error('Failed to fetch columns:', err);
+      }
+    };
+    fetchColumns();
+  }, [fileId]);
 
   const handleOptionChange = (option) => {
     setCleanOptions((prev) => ({
@@ -24,6 +43,42 @@ function DataCleaner({ fileId, onCleanSuccess }) {
     setCleanOptions((prev) => ({
       ...prev,
       fill_missing: prev.fill_missing === strategy ? null : strategy,
+    }));
+  };
+
+  const handleColumnToggle = (column) => {
+    setSelectedColumnsToKeep((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(column)) {
+        newSet.delete(column);
+      } else {
+        newSet.add(column);
+      }
+      
+      // Update columns_to_drop based on selected columns
+      const columnsToDropList = columns.filter(col => !newSet.has(col));
+      setCleanOptions((opts) => ({
+        ...opts,
+        columns_to_drop: columnsToDropList,
+      }));
+      
+      return newSet;
+    });
+  };
+
+  const handleSelectAllColumns = () => {
+    setSelectedColumnsToKeep(new Set(columns));
+    setCleanOptions((prev) => ({
+      ...prev,
+      columns_to_drop: [],
+    }));
+  };
+
+  const handleDeselectAllColumns = () => {
+    setSelectedColumnsToKeep(new Set());
+    setCleanOptions((prev) => ({
+      ...prev,
+      columns_to_drop: columns,
     }));
   };
 
@@ -60,21 +115,44 @@ function DataCleaner({ fileId, onCleanSuccess }) {
   return (
     <div className="data-cleaner">
       <h3>🧹 Data Cleaning Options</h3>
+      <p className="cleaning-order-note">Operations will be applied in the order shown below:</p>
 
       <div className="cleaning-options">
         <div className="option">
-          <label>
-            <input
-              type="checkbox"
-              checked={cleanOptions.remove_duplicates}
-              onChange={() => handleOptionChange('remove_duplicates')}
-            />
-            <span>Remove Duplicate Rows</span>
-          </label>
-          <p className="description">Remove duplicate rows from the dataset</p>
+          <span className="step-number">Step 1:</span>
+          <span>Drop Columns</span>
+          <p className="description">Select which columns to keep in your dataset</p>
+          <div className="column-selection">
+            <div className="column-buttons">
+              <button className="btn btn-small" onClick={handleSelectAllColumns}>Select All</button>
+              <button className="btn btn-small btn-secondary" onClick={handleDeselectAllColumns}>Deselect All</button>
+            </div>
+            <div className="columns-list">
+              {columns.length > 0 ? (
+                columns.map((col) => (
+                  <label key={col} className="column-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedColumnsToKeep.has(col)}
+                      onChange={() => handleColumnToggle(col)}
+                    />
+                    <span>{col}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="no-columns">No columns available</p>
+              )}
+            </div>
+            {cleanOptions.columns_to_drop.length > 0 && (
+              <p className="columns-to-drop-info">
+                {cleanOptions.columns_to_drop.length} column(s) will be dropped
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="option">
+          <span className="step-number">Step 2:</span>
           <span>Fill Missing Values</span>
           <div className="sub-options">
             <label>
@@ -123,10 +201,24 @@ function DataCleaner({ fileId, onCleanSuccess }) {
               <span>Drop Rows with Missing Values</span>
             </label>
           </div>
-          <p className="description">Fill or remove missing values in your data</p>
+          <p className="description">Fill or remove missing values in remaining columns</p>
         </div>
 
         <div className="option">
+          <span className="step-number">Step 3:</span>
+          <label>
+            <input
+              type="checkbox"
+              checked={cleanOptions.remove_duplicates}
+              onChange={() => handleOptionChange('remove_duplicates')}
+            />
+            <span>Remove Duplicate Rows</span>
+          </label>
+          <p className="description">Remove duplicate rows from the dataset</p>
+        </div>
+
+        <div className="option">
+          <span className="step-number">Step 4 (Optional):</span>
           <label>
             <input
               type="checkbox"

@@ -15,11 +15,16 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 - Data quality scoring (completeness & uniqueness)
 - Missing values detection
 - Duplicate row detection
+- Interactive visualizations (column distributions, correlations)
 
 🧹 **Data Cleaning**
-- Remove duplicate rows
-- Fill missing values (mean, median, forward fill, or drop)
-- Remove statistical outliers using IQR method
+- **Logical operation order**: Optimized workflow for efficient cleaning
+  1. **Drop Columns** - Select which columns to keep
+  2. **Fill Missing Values** - Handle NaN values (mean, median, forward fill, empty string, or drop)
+  3. **Remove Duplicates** - Remove duplicate rows
+  4. **Remove Outliers** - Optional IQR-based outlier removal
+- Multiple cleaning iterations supported
+- Real-time preview updates after each operation
 - Real-time quality score updates
 
 ⬇️ **Export**
@@ -41,6 +46,7 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 
 ### Frontend
 - **React 18** - UI framework
+- **Recharts** - Data visualization library
 - **Axios** - HTTP client
 - **CSS3** - Styling
 
@@ -187,12 +193,14 @@ The application will open in a native window with the full web interface embedde
 
 ### Clean Data
 **POST** `/api/data/clean/{file_id}`
-- Apply cleaning operations to data
-- Parameters:
+- Apply cleaning operations to data (executed in logical order)
+- Request Body:
+  - `columns_to_drop` (array): List of column names to remove
+  - `fill_missing` (string): Strategy for missing values ('mean', 'median', 'forward_fill', 'empty_string', 'drop')
   - `remove_duplicates` (bool): Remove duplicate rows
-  - `fill_missing` (string): Strategy for missing values ('mean', 'median', 'forward_fill', 'drop')
   - `remove_outliers` (bool): Remove statistical outliers
-- Returns: Cleaned dataset info and quality metrics
+- Operations are applied in sequence: columns → missing → duplicates → outliers
+- Returns: Cleaned dataset info with new file_id (e.g., `{file_id}_cleaned_1`)
 
 ### Download Data
 **GET** `/api/data/download/{file_id}`
@@ -203,9 +211,26 @@ The application will open in a native window with the full web interface embedde
 
 1. **Launch the app**: Open `http://localhost:3000` in your browser
 2. **Upload CSV**: Drag and drop or click to upload a CSV file
-3. **Review Analysis**: Check data quality metrics and issues
-4. **Clean Data**: Select cleaning options and apply transformations
-5. **Download**: Export the cleaned dataset
+3. **Review Analysis**: Check data quality metrics, visualizations, and issues
+4. **Clean Data**: Select cleaning options in logical order:
+   - Step 1: Choose columns to keep (uncheck columns to drop)
+   - Step 2: Select missing value strategy
+   - Step 3: Check to remove duplicates
+   - Step 4: Optionally remove outliers
+5. **Apply Cleaning**: Click "Apply Cleaning" (can repeat multiple times)
+6. **Review Results**: Check updated quality score and preview
+7. **Download**: Export the cleaned dataset
+
+### Why This Cleaning Order?
+
+The operations are executed in a specific order for optimal results:
+
+1. **Drop Columns First**: Reduces dataset size early, making subsequent operations faster
+2. **Fill Missing Values**: Handles data completeness before deduplication
+3. **Remove Duplicates**: Works on complete data after missing values are handled
+4. **Remove Outliers Last**: Optional step that works best on clean, deduplicated data
+
+This sequence minimizes computational overhead and produces the most reliable results.
 
 ## Scalability Features
 
@@ -259,11 +284,13 @@ npm test
 - [ ] Database integration for persistent data storage
 - [ ] User authentication and profiles
 - [ ] Advanced statistical analysis
-- [ ] Data visualization (charts, histograms)
+- [x] Data visualization (charts, histograms) - ✅ Basic charts implemented
+- [ ] More chart types (scatter plots, heatmaps)
 - [ ] Workflow automation and scheduling
-- [ ] Support for multiple file formats
+- [ ] Support for multiple file formats (Excel, JSON, Parquet)
 - [ ] Real-time collaboration features
 - [ ] API rate limiting and security
+- [ ] Undo/redo functionality for cleaning operations
 
 ## Contributing
 
@@ -281,13 +308,21 @@ MIT License - feel free to use this project for learning and development.
 
 For issues or questions, check the code comments or extend with your own features!
 
----2.0  
-**Last Updated**: February 2026
+---
 
-**Recent Updates**:
+**Version**: 0.2.0  
+**Last Updated**: February 17, 2026
+
+**Recent Updates (v0.2.0)**:
+- ✅ **Column dropping feature** - Select which columns to keep in your dataset
+- ✅ **Logical operation ordering** - Cleaning operations now execute in optimal sequence
+- ✅ **Multiple cleaning iterations** - Apply cleaning operations multiple times with unique file IDs
+- ✅ **Data visualizations** - Interactive charts for column distributions and correlations
+- ✅ **Large dataset handling** - Optimized JSON serialization for datasets with 1M+ rows
+- ✅ **UI/UX improvements** - Step-by-step cleaning workflow with clear descriptions
+
+**Previous Updates (v0.1.0)**:
 - ✅ Windows desktop application with PyInstaller
 - ✅ Multi-encoding CSV support (handles international characters)
 - ✅ Fixed API routing for packaged application
 - ✅ Dynamic API URL resolution for dev/production
-**Version**: 0.1.0  
-**Last Updated**: February 2026

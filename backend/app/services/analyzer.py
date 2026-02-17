@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 from typing import Dict, Any
 
 
@@ -11,6 +12,11 @@ def convert_numpy_types(obj):
         if np.isnan(obj) or np.isinf(obj):
             return None
         return float(obj)
+    elif isinstance(obj, float):
+        # Handle regular Python float NaN/Inf
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
     elif isinstance(obj, dict):
         return {key: convert_numpy_types(val) for key, val in obj.items()}
     elif isinstance(obj, list):

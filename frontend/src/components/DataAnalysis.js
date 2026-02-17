@@ -1,22 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { analyzeData } from '../services/api';
+import { analyzeData, previewData } from '../services/api';
 import DataPreview from './DataPreview';
+import DataVisualizations from './DataVisualizations';
 import './DataAnalysis.css';
 
 function DataAnalysis({ fileId }) {
   const [analysis, setAnalysis] = useState(null);
+  const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isDataCleaned, setIsDataCleaned] = useState(false);
 
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
         setLoading(true);
+        setError(null);
+        setChartData(null); // Clear cached chart data when switching files
+        
+        // Check if this is a cleaned file (ends with _cleaned)
+        const cleaned = fileId.includes('_cleaned');
+        setIsDataCleaned(cleaned);
+        
         const result = await analyzeData(fileId);
         setAnalysis(result);
+        
+        // Fetch preview data for visualizations (get more rows for better charts)
+        try {
+          const preview = await previewData(fileId, 1000);
+          setChartData(preview);
+        } catch (e) {
+          console.warn('Could not fetch chart data:', e);
+        }
       } catch (err) {
         setError(err.message || 'Failed to analyze data');
+        setAnalysis(null);
+        setChartData(null);
       } finally {
         setLoading(false);
       }
@@ -33,6 +53,13 @@ function DataAnalysis({ fileId }) {
 
   return (
     <div className="data-analysis">
+      <div className="analysis-header">
+        <h2>📊 Data Analysis</h2>
+        <div className={`file-status ${isDataCleaned ? 'cleaned' : 'original'}`}>
+          {isDataCleaned ? '✓ Cleaned Data' : '📁 Original Data'}
+        </div>
+      </div>
+      
       <DataPreview fileId={fileId} title="📋 Data Preview" />
       
       <div className="tabs">
@@ -41,6 +68,12 @@ function DataAnalysis({ fileId }) {
           onClick={() => setActiveTab('overview')}
         >
           Overview
+        </button>
+        <button
+          className={`tab ${activeTab === 'visualizations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('visualizations')}
+        >
+          📊 Visualizations
         </button>
         <button
           className={`tab ${activeTab === 'quality' ? 'active' : ''}`}
@@ -73,6 +106,15 @@ function DataAnalysis({ fileId }) {
               <div className="stat-value">{basic_stats.memory_usage_mb} MB</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'visualizations' && (
+        <div className="tab-content">
+          <DataVisualizations
+            data={chartData?.data || []}
+            columns={chartData?.columns || []}
+          />
         </div>
       )}
 

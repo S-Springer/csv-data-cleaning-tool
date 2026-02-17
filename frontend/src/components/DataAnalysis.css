@@ -5,6 +5,41 @@
   margin-top: 20px;
 }
 
+.analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.analysis-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5em;
+}
+
+.file-status {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.file-status.original {
+  background-color: #e8f4f8;
+  color: #0277bd;
+  border: 1px solid #01579b;
+}
+
+.file-status.cleaned {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #1b5e20;
+}
+
 .tabs {
   display: flex;
   gap: 10px;

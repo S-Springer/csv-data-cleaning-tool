@@ -5,14 +5,14 @@ import time
 from pathlib import Path
 import uvicorn
 # Import FastAPI and other backend dependencies so PyInstaller detects them
-import fastapi
-import fastapi.middleware
-import fastapi.middleware.cors
-import fastapi.staticfiles
-import pandas
-import numpy
-import pydantic
-import starlette
+import fastapi  # noqa: F401
+import fastapi.middleware  # noqa: F401
+import fastapi.middleware.cors  # noqa: F401
+import fastapi.staticfiles  # noqa: F401
+import pandas  # noqa: F401
+import numpy  # noqa: F401
+import pydantic  # noqa: F401
+import starlette  # noqa: F401
 
 def base_path():
     if getattr(sys, "frozen", False):

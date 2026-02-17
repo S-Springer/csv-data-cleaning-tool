@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 from typing import Dict, List, Any
 
 
@@ -11,6 +12,11 @@ def convert_numpy_types(obj):
         if np.isnan(obj) or np.isinf(obj):
             return None
         return float(obj)
+    elif isinstance(obj, float):
+        # Handle regular Python float NaN/Inf
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
     elif isinstance(obj, dict):
         return {key: convert_numpy_types(val) for key, val in obj.items()}
     elif isinstance(obj, list):
@@ -94,5 +100,18 @@ class DataCleaner:
                 upper_bound = Q3 + 1.5 * IQR
                 
                 df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
+        
+        return df
+    
+    @staticmethod
+    def drop_columns(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+        """Drop specified columns from dataframe"""
+        df = df.copy()
+        
+        # Only drop columns that exist in the dataframe
+        columns_to_drop = [col for col in columns if col in df.columns]
+        
+        if columns_to_drop:
+            df = df.drop(columns=columns_to_drop)
         
         return df

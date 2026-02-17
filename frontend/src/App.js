@@ -59,7 +59,7 @@ function App() {
 
             <div className="main-content">
               <div className="left-panel">
-                {currentFileId && <DataAnalysis fileId={currentFileId} />}
+                {currentFileId && <DataAnalysis key={currentFileId} fileId={currentFileId} />}
               </div>
 
               <div className="right-panel">

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import io
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 from app.services.cleaner import DataCleaner, convert_numpy_types
 from app.services.analyzer import DataAnalyzer
 
@@ -11,6 +12,16 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 
 # Store uploaded dataframes in memory (for demo; use database in production)
 uploaded_data = {}
+# Track cleaning iteration count for unique file IDs
+clean_counters = {}
+
+
+# Pydantic model for clean data request
+class CleanDataRequest(BaseModel):
+    remove_duplicates: bool = False
+    fill_missing: Optional[str] = None
+    remove_outliers: bool = False
+    columns_to_drop: Optional[List[str]] = None
 
 
 @router.post("/upload")
@@ -67,19 +78,40 @@ async def upload_file(file: UploadFile = File(...)):
 
 @router.get("/preview/{file_id}")
 def preview_data(file_id: str, rows: int = 5):
-    """Get preview of data (first N rows)"""
+    """Get preview of data (first N rows or sampled for large datasets)"""
     if file_id not in uploaded_data:
         raise HTTPException(status_code=404, detail="File not found")
     
     df = uploaded_data[file_id]
-    preview_df = df.head(rows)
+    is_sampled = False
+    
+    # For large datasets, sample instead of converting all rows to dict (prevents JSON serialization errors)
+    if len(df) > 10000:
+        preview_df = df.sample(n=min(rows, len(df)), random_state=42, ignore_index=True)
+        is_sampled = True
+    else:
+        preview_df = df.head(rows)
+    
+    # Aggressively handle NaN/Inf values before JSON serialization
+    preview_df = preview_df.fillna(value=None)  # Replace NaN with None
+    preview_df = preview_df.replace([np.inf, -np.inf], None)  # Replace infinity with None
+    
+    # Convert to dict and manually ensure all values are JSON-serializable
+    preview_dict = preview_df.to_dict(orient='records')
+    
+    # Final pass: ensure no NaN/Inf in the dict (handles edge cases)
+    for record in preview_dict:
+        for key, value in record.items():
+            if isinstance(value, float) and (np.isnan(value) or np.isinf(value)):
+                record[key] = None
     
     return {
         "file_id": file_id,
         "rows_shown": len(preview_df),
         "total_rows": len(df),
+        "is_sampled": is_sampled,
         "columns": preview_df.columns.tolist(),
-        "data": preview_df.to_dict(orient='records')
+        "data": preview_dict
     }
 
 
@@ -105,13 +137,8 @@ def analyze_data(file_id: str):
 
 
 @router.post("/clean/{file_id}")
-def clean_data(
-    file_id: str,
-    remove_duplicates: bool = False,
-    fill_missing: Optional[str] = None,
-    remove_outliers: bool = False
-):
-    """Apply cleaning operations to data"""
+def clean_data(file_id: str, request: CleanDataRequest):
+    """Apply cleaning operations to data in specific order"""
     if file_id not in uploaded_data:
         raise HTTPException(status_code=404, detail="File not found")
     
@@ -119,21 +146,36 @@ def clean_data(
     
     operations = []
     
-    if remove_duplicates:
+    # Step 1: Choose which columns to keep (drop unwanted columns first)
+    if request.columns_to_drop and len(request.columns_to_drop) > 0:
+        original_cols = len(df.columns)
+        df = DataCleaner.drop_columns(df, request.columns_to_drop)
+        dropped_count = original_cols - len(df.columns)
+        operations.append(f"Dropped {dropped_count} column(s)")
+    
+    # Step 2: Handle missing values
+    if request.fill_missing:
+        df = DataCleaner.fill_missing_values(df, strategy=request.fill_missing)
+        operations.append(f"Filled missing values ({request.fill_missing})")
+    
+    # Step 3: Remove duplicates
+    if request.remove_duplicates:
         df = DataCleaner.remove_duplicates(df)
         operations.append("Removed duplicates")
     
-    if fill_missing:
-        df = DataCleaner.fill_missing_values(df, strategy=fill_missing)
-        operations.append(f"Filled missing values ({fill_missing})")
-    
-    if remove_outliers:
+    # Step 4: Remove outliers (optional, after other operations)
+    if request.remove_outliers:
         original_rows = len(df)
         df = DataCleaner.remove_outliers(df)
         operations.append(f"Removed outliers ({original_rows - len(df)} rows removed)")
     
-    # Save cleaned data
-    cleaned_id = f"{file_id}_cleaned"
+    # Generate unique cleaned ID using counter (allows multiple clean operations)
+    if file_id not in clean_counters:
+        clean_counters[file_id] = 0
+    
+    clean_counters[file_id] += 1
+    cleaned_id = f"{file_id}_cleaned_{clean_counters[file_id]}"
+    
     uploaded_data[cleaned_id] = df
     
     return {
