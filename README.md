@@ -29,6 +29,16 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 - Real-time preview updates after each operation
 - Real-time quality score updates
 
+🔐 **Authentication & File Management (MVP)**
+- User registration and login with bearer token auth
+- Optional authenticated workflow (existing anonymous workflow still supported)
+- Persistent file metadata tracking (owner, lineage, creation time)
+- File listing and deletion endpoints
+
+⚡ **Large-File Batch Processing (MVP)**
+- Chunk-based CSV upload endpoint for large files
+- Batch metadata returned (chunk size, chunk count, detected encoding, total rows)
+
 ⬇️ **Export**
 - Download cleaned datasets as CSV
 
@@ -192,6 +202,13 @@ The application will open in a native window with the full web interface embedde
 **GET** `/api/data/analyze/{file_id}`
 - Get comprehensive analysis of uploaded data
 - Returns: basic stats, column stats, quality score, missing values, duplicates
+- Numeric column statistics include: q1, q3, iqr, skewness, kurtosis
+
+### Batch Upload (Large Files)
+**POST** `/api/data/upload/batch`
+- Upload and process CSV in chunks for large-file workflows
+- Query parameter: `chunk_size` (default `100000`)
+- Returns: file_id, batch metadata, basic stats
 
 ### Clean Data
 **POST** `/api/data/clean/{file_id}`
@@ -210,6 +227,23 @@ The application will open in a native window with the full web interface embedde
 **GET** `/api/data/download/{file_id}`
 - Download processed data as CSV
 - Returns: CSV content
+
+### File Management
+**GET** `/api/data/files`
+- List tracked file metadata (all files for anonymous use, or current user's files when authenticated)
+
+**DELETE** `/api/data/files/{file_id}`
+- Delete tracked file metadata and in-memory dataset
+
+### Authentication
+**POST** `/api/auth/register`
+- Create a user and return bearer token
+
+**POST** `/api/auth/login`
+- Authenticate user and return bearer token
+
+**GET** `/api/auth/me`
+- Get current authenticated user details
 
 ## Usage Example
 
@@ -245,11 +279,11 @@ This sequence minimizes computational overhead and produces the most reliable re
 This project is designed to scale:
 
 ### Short-term (v0.2-v0.3)
-- Database integration (PostgreSQL) for persistent storage
-- User authentication and file management
-- Batch processing for large files
-- More statistical analysis options
-- Data visualization with charts
+- ✅ Database integration foundation (SQLAlchemy + persistent metadata)
+- ✅ User authentication and file management (MVP)
+- ✅ Batch processing for large files (MVP chunked upload)
+- ✅ More statistical analysis options (q1, q3, iqr, skewness, kurtosis)
+- ✅ Data visualization with charts
 
 ### Medium-term (v0.4-v0.5)
 - REST API optimization
@@ -326,6 +360,10 @@ For issues or questions, check the code comments or extend with your own feature
 - ✅ **Data standardization/normalization step** - Added z-score and min-max scaling options
 - ✅ **Expanded ordered pipeline** - Cleaning flow now has 6 explicit ordered steps
 - ✅ **UI wording improvements** - Combined scaling terminology in one user-facing step
+- ✅ **Scalability foundations** - Added SQLAlchemy persistence and file metadata tracking
+- ✅ **Authentication MVP** - Added register/login/me endpoints with bearer token auth
+- ✅ **Batch upload MVP** - Added chunked CSV processing endpoint for large files
+- ✅ **Richer statistics** - Added q1, q3, iqr, skewness, kurtosis to numeric analysis
 
 **Recent Updates (v0.2.0)**:
 - ✅ **Column dropping feature** - Select which columns to keep in your dataset

@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.api.data_routes import router as data_router
+from app.api.auth_routes import router as auth_router
+from app.core.database import engine, Base
 import numpy as np
 import os
 
@@ -23,6 +25,12 @@ app.add_middleware(
 
 # Include API routers FIRST (before static files)
 app.include_router(data_router)
+app.include_router(auth_router)
+
+
+@app.on_event("startup")
+def on_startup():
+    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health")

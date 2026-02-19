@@ -63,16 +63,37 @@ class DataAnalyzer:
                     mean_val = float(df[col].mean())
                     median_val = float(df[col].median())
                     std_val = float(df[col].std())
+                    q1_val = float(df[col].quantile(0.25))
+                    q3_val = float(df[col].quantile(0.75))
+                    iqr_val = float(q3_val - q1_val)
+                    skew_val = float(df[col].skew())
+                    kurtosis_val = float(df[col].kurtosis())
                     
                     col_stats.update({
                         "min": min_val if not (np.isnan(min_val) or np.isinf(min_val)) else None,
                         "max": max_val if not (np.isnan(max_val) or np.isinf(max_val)) else None,
                         "mean": mean_val if not (np.isnan(mean_val) or np.isinf(mean_val)) else None,
                         "median": median_val if not (np.isnan(median_val) or np.isinf(median_val)) else None,
-                        "std": std_val if not (np.isnan(std_val) or np.isinf(std_val)) else None
+                        "std": std_val if not (np.isnan(std_val) or np.isinf(std_val)) else None,
+                        "q1": q1_val if not (np.isnan(q1_val) or np.isinf(q1_val)) else None,
+                        "q3": q3_val if not (np.isnan(q3_val) or np.isinf(q3_val)) else None,
+                        "iqr": iqr_val if not (np.isnan(iqr_val) or np.isinf(iqr_val)) else None,
+                        "skewness": skew_val if not (np.isnan(skew_val) or np.isinf(skew_val)) else None,
+                        "kurtosis": kurtosis_val if not (np.isnan(kurtosis_val) or np.isinf(kurtosis_val)) else None
                     })
                 except:
-                    col_stats.update({"min": None, "max": None, "mean": None, "median": None, "std": None})
+                    col_stats.update({
+                        "min": None,
+                        "max": None,
+                        "mean": None,
+                        "median": None,
+                        "std": None,
+                        "q1": None,
+                        "q3": None,
+                        "iqr": None,
+                        "skewness": None,
+                        "kurtosis": None
+                    })
             else:
                 mode_vals = df[col].mode()
                 col_stats["most_common"] = str(mode_vals[0]) if len(mode_vals) > 0 else None

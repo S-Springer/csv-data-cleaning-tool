@@ -1,12 +1,16 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import io
 from typing import Optional, Any, Dict, List
+from sqlalchemy.orm import Session
 from app.services.cleaner import DataCleaner, convert_numpy_types
 from app.services.analyzer import DataAnalyzer
+from app.core.database import get_db
+from app.core.security import get_optional_user
+from app.models import FileRecord, User
 
 router = APIRouter(prefix="/api/data", tags=["data"])
 
@@ -14,6 +18,51 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 uploaded_data = {}
 # Track cleaning iteration count for unique file IDs
 clean_counters = {}
+
+
+def _generate_unique_file_id(base_name: str, db: Session) -> str:
+    """Generate a unique file_id across memory + database records"""
+    clean_base = base_name.replace('.csv', '')
+    candidate = clean_base
+    counter = 1
+
+    while candidate in uploaded_data or db.query(FileRecord).filter(FileRecord.file_id == candidate).first():
+        candidate = f"{clean_base}_{counter}"
+        counter += 1
+
+    return candidate
+
+
+def _upsert_file_record(
+    db: Session,
+    file_id: str,
+    original_filename: str,
+    rows: int,
+    columns: int,
+    owner_id: Optional[int] = None,
+    is_cleaned: bool = False,
+    parent_file_id: Optional[str] = None
+):
+    record = db.query(FileRecord).filter(FileRecord.file_id == file_id).first()
+    if not record:
+        record = FileRecord(
+            file_id=file_id,
+            original_filename=original_filename,
+            owner_id=owner_id,
+            rows=rows,
+            columns=columns,
+            is_cleaned=is_cleaned,
+            parent_file_id=parent_file_id
+        )
+        db.add(record)
+    else:
+        record.rows = rows
+        record.columns = columns
+        record.owner_id = owner_id
+        record.is_cleaned = is_cleaned
+        record.parent_file_id = parent_file_id
+
+    db.commit()
 
 
 # Pydantic model for clean data request
@@ -27,7 +76,11 @@ class CleanDataRequest(BaseModel):
 
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user)
+):
     """Upload and parse a CSV file"""
     try:
         print(f"Received file: {file.filename}, content_type: {file.content_type}")
@@ -58,8 +111,19 @@ async def upload_file(file: UploadFile = File(...)):
                 detail=f"Failed to decode CSV file. Tried encodings: {', '.join(encodings_to_try)}. Error: {str(last_error)}"
             )
         
-        file_id = file.filename.replace('.csv', '')
+        file_id = _generate_unique_file_id(file.filename, db)
         uploaded_data[file_id] = df
+
+        _upsert_file_record(
+            db=db,
+            file_id=file_id,
+            original_filename=file.filename,
+            rows=int(len(df)),
+            columns=int(len(df.columns)),
+            owner_id=current_user.id if current_user else None,
+            is_cleaned=False,
+            parent_file_id=None
+        )
         
         basic_stats = DataAnalyzer.get_basic_stats(df)
         
@@ -75,6 +139,85 @@ async def upload_file(file: UploadFile = File(...)):
         print(f"Error uploading file: {type(e).__name__}: {str(e)}")
         import traceback
         traceback.print_exc()
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/upload/batch")
+async def upload_file_batch(
+    file: UploadFile = File(...),
+    chunk_size: int = 100000,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """Upload and process CSV in chunks for large-file workflows"""
+    try:
+        if not file.filename.endswith('.csv'):
+            raise HTTPException(status_code=400, detail="Only CSV files are supported")
+
+        contents = await file.read()
+        encodings_to_try = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']
+
+        chunks = []
+        processed_chunks = 0
+        total_rows = 0
+        detected_encoding = None
+        last_error = None
+
+        for encoding in encodings_to_try:
+            try:
+                chunk_iter = pd.read_csv(io.BytesIO(contents), encoding=encoding, chunksize=chunk_size)
+                chunks = []
+                processed_chunks = 0
+                total_rows = 0
+
+                for chunk in chunk_iter:
+                    chunks.append(chunk)
+                    processed_chunks += 1
+                    total_rows += len(chunk)
+
+                detected_encoding = encoding
+                break
+            except Exception as e:
+                last_error = e
+                continue
+
+        if not chunks:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to process CSV in batches. Error: {str(last_error)}"
+            )
+
+        df = pd.concat(chunks, ignore_index=True)
+
+        file_id = _generate_unique_file_id(file.filename, db)
+        uploaded_data[file_id] = df
+
+        _upsert_file_record(
+            db=db,
+            file_id=file_id,
+            original_filename=file.filename,
+            rows=int(len(df)),
+            columns=int(len(df.columns)),
+            owner_id=current_user.id if current_user else None,
+            is_cleaned=False,
+            parent_file_id=None
+        )
+
+        return {
+            "file_id": file_id,
+            "status": "success",
+            "message": f"Batch upload complete for {file.filename}",
+            "batch_info": {
+                "chunk_size": chunk_size,
+                "processed_chunks": processed_chunks,
+                "detected_encoding": detected_encoding,
+                "total_rows": total_rows
+            },
+            "stats": DataAnalyzer.get_basic_stats(df)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -139,7 +282,12 @@ def analyze_data(file_id: str):
 
 
 @router.post("/clean/{file_id}")
-def clean_data(file_id: str, request: CleanDataRequest):
+def clean_data(
+    file_id: str,
+    request: CleanDataRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user)
+):
     """Apply cleaning operations to data in specific order"""
     if file_id not in uploaded_data:
         raise HTTPException(status_code=404, detail="File not found")
@@ -189,6 +337,18 @@ def clean_data(file_id: str, request: CleanDataRequest):
     cleaned_id = f"{file_id}_cleaned_{clean_counters[file_id]}"
     
     uploaded_data[cleaned_id] = df
+
+    source_record = db.query(FileRecord).filter(FileRecord.file_id == file_id).first()
+    _upsert_file_record(
+        db=db,
+        file_id=cleaned_id,
+        original_filename=(source_record.original_filename if source_record else f"{file_id}.csv"),
+        rows=int(len(df)),
+        columns=int(len(df.columns)),
+        owner_id=(source_record.owner_id if source_record else (current_user.id if current_user else None)),
+        is_cleaned=True,
+        parent_file_id=file_id
+    )
     
     return {
         "original_file_id": file_id,
@@ -214,3 +374,55 @@ def download_data(file_id: str):
         "rows": len(df),
         "columns": len(df.columns)
     }
+
+
+@router.get("/files")
+def list_files(
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """List tracked files (all anonymous files or only current user's files)"""
+    query = db.query(FileRecord)
+    if current_user:
+        query = query.filter(FileRecord.owner_id == current_user.id)
+
+    records = query.order_by(FileRecord.created_at.desc()).all()
+
+    return {
+        "files": [
+            {
+                "file_id": record.file_id,
+                "original_filename": record.original_filename,
+                "rows": record.rows,
+                "columns": record.columns,
+                "is_cleaned": record.is_cleaned,
+                "parent_file_id": record.parent_file_id,
+                "created_at": record.created_at.isoformat() if record.created_at else None
+            }
+            for record in records
+        ]
+    }
+
+
+@router.delete("/files/{file_id}")
+def delete_file(
+    file_id: str,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """Delete file from memory and metadata store"""
+    record = db.query(FileRecord).filter(FileRecord.file_id == file_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if record.owner_id is not None:
+        if not current_user or current_user.id != record.owner_id:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this file")
+
+    if file_id in uploaded_data:
+        del uploaded_data[file_id]
+
+    db.delete(record)
+    db.commit()
+
+    return {"status": "success", "message": f"Deleted file {file_id}"}

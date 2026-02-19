@@ -33,3 +33,4 @@ dist/
 *.swo
 *~
 .DS_Store
+app.db
