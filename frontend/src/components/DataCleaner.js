@@ -11,6 +11,8 @@ function DataCleaner({ fileId, onCleanSuccess }) {
   const [cleanOptions, setCleanOptions] = useState({
     remove_duplicates: false,
     fill_missing: null,
+    clean_strings: false,
+    standardize_data: null,
     remove_outliers: false,
     columns_to_drop: [],
   });
@@ -43,6 +45,13 @@ function DataCleaner({ fileId, onCleanSuccess }) {
     setCleanOptions((prev) => ({
       ...prev,
       fill_missing: prev.fill_missing === strategy ? null : strategy,
+    }));
+  };
+
+  const handleStandardizeChange = (method) => {
+    setCleanOptions((prev) => ({
+      ...prev,
+      standardize_data: prev.standardize_data === method ? null : method,
     }));
   };
 
@@ -209,6 +218,45 @@ function DataCleaner({ fileId, onCleanSuccess }) {
           <label>
             <input
               type="checkbox"
+              checked={cleanOptions.clean_strings}
+              onChange={() => handleOptionChange('clean_strings')}
+            />
+            <span>Clean String Values</span>
+          </label>
+          <p className="description">Trim leading/trailing spaces and normalize extra whitespace in text columns</p>
+        </div>
+
+        <div className="option">
+          <span className="step-number">Step 4:</span>
+          <span>Data Standardization & Normalization</span>
+          <div className="sub-options">
+            <label>
+              <input
+                type="radio"
+                name="standardize_data"
+                checked={cleanOptions.standardize_data === 'zscore'}
+                onChange={() => handleStandardizeChange('zscore')}
+              />
+              <span>Z-Score Standardization</span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="standardize_data"
+                checked={cleanOptions.standardize_data === 'minmax'}
+                onChange={() => handleStandardizeChange('minmax')}
+              />
+              <span>Min-Max Normalization (0 to 1)</span>
+            </label>
+          </div>
+          <p className="description">Choose one numeric scaling method: z-score standardization or min-max normalization</p>
+        </div>
+
+        <div className="option">
+          <span className="step-number">Step 5:</span>
+          <label>
+            <input
+              type="checkbox"
               checked={cleanOptions.remove_duplicates}
               onChange={() => handleOptionChange('remove_duplicates')}
             />
@@ -218,7 +266,7 @@ function DataCleaner({ fileId, onCleanSuccess }) {
         </div>
 
         <div className="option">
-          <span className="step-number">Step 4 (Optional):</span>
+          <span className="step-number">Step 6 (Optional):</span>
           <label>
             <input
               type="checkbox"

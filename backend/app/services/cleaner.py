@@ -83,6 +83,63 @@ class DataCleaner:
                     df = df.dropna(subset=[col])
         
         return df
+
+    @staticmethod
+    def clean_string_values(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+        """Clean string columns by trimming and normalizing whitespace"""
+        df = df.copy()
+        total_updates = 0
+
+        string_columns = df.select_dtypes(include=['object', 'string']).columns
+
+        for col in string_columns:
+            series = df[col].astype('string')
+            cleaned = series.str.strip().str.replace(r'\s+', ' ', regex=True)
+
+            changed_mask = (series != cleaned) & ~(series.isna() & cleaned.isna())
+            updates = int(changed_mask.fillna(False).sum())
+            total_updates += updates
+
+            df[col] = cleaned
+
+        return df, total_updates
+
+    @staticmethod
+    def standardize_numeric_data(df: pd.DataFrame, method: str = "zscore") -> tuple[pd.DataFrame, int]:
+        """Standardize numeric columns using z-score or min-max scaling"""
+        df = df.copy()
+        standardized_columns = 0
+
+        numeric_columns = df.select_dtypes(include=[np.number]).columns
+
+        for col in numeric_columns:
+            series = df[col]
+
+            if series.notna().sum() == 0:
+                continue
+
+            if method == "zscore":
+                mean = series.mean()
+                std = series.std()
+
+                if pd.isna(std) or std == 0:
+                    continue
+
+                df[col] = (series - mean) / std
+                standardized_columns += 1
+
+            elif method == "minmax":
+                min_val = series.min()
+                max_val = series.max()
+                value_range = max_val - min_val
+
+                if pd.isna(value_range) or value_range == 0:
+                    continue
+
+                df[col] = (series - min_val) / value_range
+                standardized_columns += 1
+
+        return df, standardized_columns
     
     @staticmethod
     def remove_outliers(df: pd.DataFrame, method: str = "iqr") -> pd.DataFrame:

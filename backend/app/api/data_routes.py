@@ -20,6 +20,8 @@ clean_counters = {}
 class CleanDataRequest(BaseModel):
     remove_duplicates: bool = False
     fill_missing: Optional[str] = None
+    clean_strings: bool = False
+    standardize_data: Optional[str] = None
     remove_outliers: bool = False
     columns_to_drop: Optional[List[str]] = None
 
@@ -158,12 +160,22 @@ def clean_data(file_id: str, request: CleanDataRequest):
         df = DataCleaner.fill_missing_values(df, strategy=request.fill_missing)
         operations.append(f"Filled missing values ({request.fill_missing})")
     
-    # Step 3: Remove duplicates
+    # Step 3: Clean string values
+    if request.clean_strings:
+        df, updated_cells = DataCleaner.clean_string_values(df)
+        operations.append(f"Cleaned string values ({updated_cells} cell(s) normalized)")
+
+    # Step 4: Standardize numeric data
+    if request.standardize_data:
+        df, standardized_columns = DataCleaner.standardize_numeric_data(df, method=request.standardize_data)
+        operations.append(f"Standardized numeric data ({request.standardize_data}, {standardized_columns} column(s))")
+
+    # Step 5: Remove duplicates
     if request.remove_duplicates:
         df = DataCleaner.remove_duplicates(df)
         operations.append("Removed duplicates")
     
-    # Step 4: Remove outliers (optional, after other operations)
+    # Step 6: Remove outliers (optional, after other operations)
     if request.remove_outliers:
         original_rows = len(df)
         df = DataCleaner.remove_outliers(df)

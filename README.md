@@ -21,8 +21,10 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 - **Logical operation order**: Optimized workflow for efficient cleaning
   1. **Drop Columns** - Select which columns to keep
   2. **Fill Missing Values** - Handle NaN values (mean, median, forward fill, empty string, or drop)
-  3. **Remove Duplicates** - Remove duplicate rows
-  4. **Remove Outliers** - Optional IQR-based outlier removal
+  3. **Clean String Values** - Trim extra spaces and normalize whitespace in text columns
+  4. **Data Standardization & Normalization** - Choose one numeric scaling method (z-score or min-max)
+  5. **Remove Duplicates** - Remove duplicate rows
+  6. **Remove Outliers** - Optional IQR-based outlier removal
 - Multiple cleaning iterations supported
 - Real-time preview updates after each operation
 - Real-time quality score updates
@@ -197,9 +199,11 @@ The application will open in a native window with the full web interface embedde
 - Request Body:
   - `columns_to_drop` (array): List of column names to remove
   - `fill_missing` (string): Strategy for missing values ('mean', 'median', 'forward_fill', 'empty_string', 'drop')
+  - `clean_strings` (bool): Trim and normalize whitespace in string/text columns
+  - `standardize_data` (string): Numeric scaling method ('zscore' or 'minmax')
   - `remove_duplicates` (bool): Remove duplicate rows
   - `remove_outliers` (bool): Remove statistical outliers
-- Operations are applied in sequence: columns → missing → duplicates → outliers
+- Operations are applied in sequence: columns → missing → strings → scaling → duplicates → outliers
 - Returns: Cleaned dataset info with new file_id (e.g., `{file_id}_cleaned_1`)
 
 ### Download Data
@@ -215,8 +219,10 @@ The application will open in a native window with the full web interface embedde
 4. **Clean Data**: Select cleaning options in logical order:
    - Step 1: Choose columns to keep (uncheck columns to drop)
    - Step 2: Select missing value strategy
-   - Step 3: Check to remove duplicates
-   - Step 4: Optionally remove outliers
+  - Step 3: Optionally clean string values (trim/whitespace normalization)
+  - Step 4: Optionally apply one scaling method (z-score or min-max)
+  - Step 5: Check to remove duplicates
+  - Step 6: Optionally remove outliers
 5. **Apply Cleaning**: Click "Apply Cleaning" (can repeat multiple times)
 6. **Review Results**: Check updated quality score and preview
 7. **Download**: Export the cleaned dataset
@@ -227,8 +233,10 @@ The operations are executed in a specific order for optimal results:
 
 1. **Drop Columns First**: Reduces dataset size early, making subsequent operations faster
 2. **Fill Missing Values**: Handles data completeness before deduplication
-3. **Remove Duplicates**: Works on complete data after missing values are handled
-4. **Remove Outliers Last**: Optional step that works best on clean, deduplicated data
+3. **Clean String Values**: Standardizes text formatting before record comparison and modeling
+4. **Apply Numeric Scaling**: Makes numeric features comparable on a consistent scale
+5. **Remove Duplicates**: Works on standardized values after text and numeric cleanup
+6. **Remove Outliers Last**: Optional step that works best on cleaned, scaled data
 
 This sequence minimizes computational overhead and produces the most reliable results.
 
@@ -310,8 +318,14 @@ For issues or questions, check the code comments or extend with your own feature
 
 ---
 
-**Version**: 0.2.0  
-**Last Updated**: February 17, 2026
+**Version**: 0.3.0  
+**Last Updated**: February 19, 2026
+
+**Recent Updates (v0.3.0)**:
+- ✅ **String cleaning step** - Added text normalization (trim + whitespace cleanup)
+- ✅ **Data standardization/normalization step** - Added z-score and min-max scaling options
+- ✅ **Expanded ordered pipeline** - Cleaning flow now has 6 explicit ordered steps
+- ✅ **UI wording improvements** - Combined scaling terminology in one user-facing step
 
 **Recent Updates (v0.2.0)**:
 - ✅ **Column dropping feature** - Select which columns to keep in your dataset
