@@ -117,6 +117,16 @@
   margin-top: 20px;
 }
 
+.preview-empty {
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 20px;
+  border: 1px dashed #dfe6e9;
+}
+
 .preview-error {
   padding: 20px;
   background-color: #fadbd8;

@@ -1,0 +1,26 @@
+record_id,full_name,city,age,salary,department,email,notes,join_date,performance_score,temp_col
+1,"  Alice   Johnson  "," New   York ",29,72000,Engineering," alice.j@example.com ","  Strong   performer  ",2022-01-15,88.5,drop_me
+2,"Bob Smith",Los Angeles,34,81000,Engineering,bob.s@example.com,"Needs  mentoring",2021-11-03,79.2,drop_me
+3,"Carla  Mendez",Chicago,41,95000,Finance,carla.m@example.com,"Top performer",2020-07-19,91.4,drop_me
+4,"David Lee",Houston,27,,Marketing,david.l@example.com,"Missing salary",2023-02-10,74.8,drop_me
+5," Emma   Brown ",Phoenix,31,67000,Sales,emma.b@example.com,"  High   potential",2022-09-01,82.1,drop_me
+6,"Emma Brown",Phoenix,31,67000,Sales,emma.b@example.com,"High potential",2022-09-01,82.1,drop_me
+7,"Frank   Walker",Philadelphia,45,120000,Management,frank.w@example.com,"Senior leader",2018-03-26,89.9,drop_me
+8,"Grace Kim",San Antonio,38,88000,Product,grace.k@example.com,"",2019-12-08,,drop_me
+9,"Henry  Davis",San Diego,,76000,Support,henry.d@example.com,"Missing age",2021-05-30,70.2,drop_me
+10,"Isabel Moore",Dallas,26,59000,Support,isabel.m@example.com,"New joiner",2024-01-09,68.7,drop_me
+11,"Jack Wilson",San Jose,52,150000,Management,jack.w@example.com,"Executive",2016-10-11,93.0,drop_me
+12,"Karen Patel",Austin,33,84000,Product,karen.p@example.com,"Solid contributor",2020-04-17,85.6,drop_me
+13,"Liam Turner",Jacksonville,28,64000,Sales,liam.t@example.com,"",2023-06-21,77.5,drop_me
+14,"Mia  Clark",Fort Worth,37,91000,Finance,mia.c@example.com,"Reliable",2019-08-14,86.8,drop_me
+15,"Noah Green",Columbus,30,73000,Engineering,noah.g@example.com,"  Multiple    spaces here ",2022-11-05,80.9,drop_me
+16,"Olivia Hall",Charlotte,44,101000,Finance,olivia.h@example.com,"Consistent",2018-06-28,88.1,drop_me
+17,"Peter Young",San Francisco,39,132000,Engineering,peter.y@example.com,"Remote worker",2017-09-13,90.2,drop_me
+18,"Quinn Adams",Indianapolis,35,87000,Marketing,quinn.a@example.com,"",2021-03-03,76.4,drop_me
+19,"Rita Scott",Seattle,32,999999,Sales,rita.s@example.com,"Salary outlier",2020-02-20,84.3,drop_me
+20,"Sam  Baker",Denver,120,68000,Support,sam.b@example.com,"Age outlier",2019-01-01,72.0,drop_me
+21,"Tina Rogers",Washington,29,70000,Engineering,tina.r@example.com,"Trailing space ",2022-05-16,81.7,drop_me
+22,"Uma Foster",Boston,31,70500,Engineering,uma.f@example.com,"Leading space",2022-05-16,81.7,drop_me
+23," Victor  Price",El Paso,40,90500,Finance,victor.p@example.com,"  Duplicate candidate  ",2020-08-01,86.0,drop_me
+24,"Victor Price",El Paso,40,90500,Finance,victor.p@example.com,"Duplicate candidate",2020-08-01,86.0,drop_me
+25,"Wendy Reed",Nashville,36,86000,Marketing,wendy.r@example.com,"Good communication",2021-07-07,83.4,drop_me

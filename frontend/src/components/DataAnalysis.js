@@ -45,7 +45,7 @@ function DataAnalysis({ fileId }) {
     fetchAnalysis();
   }, [fileId]);
 
-  if (loading) return <div className="loading">Loading analysis...</div>;
+  if (loading) return <div className="loading">Analyzing dataset...</div>;
   if (error) return <div className="error">{error}</div>;
   if (!analysis) return null;
 
@@ -111,10 +111,14 @@ function DataAnalysis({ fileId }) {
 
       {activeTab === 'visualizations' && (
         <div className="tab-content">
-          <DataVisualizations
-            data={chartData?.data || []}
-            columns={chartData?.columns || []}
-          />
+          {(chartData?.data || []).length > 0 ? (
+            <DataVisualizations
+              data={chartData?.data || []}
+              columns={chartData?.columns || []}
+            />
+          ) : (
+            <div className="viz-empty-state">Preview data is not available yet for charts.</div>
+          )}
         </div>
       )}
 

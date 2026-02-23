@@ -8,6 +8,7 @@ from typing import Optional, Any, Dict, List
 from sqlalchemy.orm import Session
 from app.services.cleaner import DataCleaner, convert_numpy_types
 from app.services.analyzer import DataAnalyzer
+from app.services.ai_assistant import AIAssistant
 from app.core.database import get_db
 from app.core.security import get_optional_user
 from app.models import FileRecord, User
@@ -73,6 +74,10 @@ class CleanDataRequest(BaseModel):
     standardize_data: Optional[str] = None
     remove_outliers: bool = False
     columns_to_drop: Optional[List[str]] = None
+
+
+class AIInsightRequest(BaseModel):
+    question: Optional[str] = None
 
 
 @router.post("/upload")
@@ -279,6 +284,29 @@ def analyze_data(file_id: str):
     
     # Ensure all numpy types are converted to JSON-serializable Python types
     return convert_numpy_types(response)
+
+
+@router.post("/ai/insights/{file_id}")
+def generate_ai_insights(file_id: str, request: AIInsightRequest):
+    """Generate AI-powered recommendations for uploaded data."""
+    if file_id not in uploaded_data:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    df = uploaded_data[file_id]
+    analysis = {
+        "basic_stats": DataAnalyzer.get_basic_stats(df),
+        "quality_score": DataAnalyzer.get_data_quality_score(df),
+        "missing_values": DataCleaner.detect_missing_values(df),
+        "duplicates": DataCleaner.detect_duplicates(df),
+    }
+
+    result = AIAssistant.generate_insights(
+        file_id=file_id,
+        df=df,
+        analysis=analysis,
+        question=request.question,
+    )
+    return convert_numpy_types(result)
 
 
 @router.post("/clean/{file_id}")

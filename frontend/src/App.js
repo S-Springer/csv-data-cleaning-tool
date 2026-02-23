@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import FileUpload from './components/FileUpload';
 import DataAnalysis from './components/DataAnalysis';
 import DataCleaner from './components/DataCleaner';
+import AIAssistant from './components/AIAssistant';
 import './App.css';
 
 function App() {
@@ -28,7 +29,13 @@ function App() {
 
       <main className="app-container">
         {!uploadedFile ? (
-          <FileUpload onUploadSuccess={handleUploadSuccess} />
+          <div className="section-card">
+            <div className="section-header">
+              <h2>1) Upload Dataset</h2>
+              <p>Start by uploading a CSV file to unlock analysis, cleaning, and AI insights.</p>
+            </div>
+            <FileUpload onUploadSuccess={handleUploadSuccess} />
+          </div>
         ) : (
           <div className="workspace">
             <div className="file-info">
@@ -59,16 +66,31 @@ function App() {
 
             <div className="main-content">
               <div className="left-panel">
-                {currentFileId && <DataAnalysis key={currentFileId} fileId={currentFileId} />}
+                <div className="section-card">
+                  <div className="section-header">
+                    <h2>2) Analyze</h2>
+                    <p>Review dataset quality, column stats, and data profile.</p>
+                  </div>
+                  {currentFileId && <DataAnalysis key={currentFileId} fileId={currentFileId} />}
+                </div>
               </div>
 
               <div className="right-panel">
-                {uploadedFile && (
-                  <DataCleaner
-                    fileId={uploadedFile.file_id}
-                    onCleanSuccess={handleCleanSuccess}
-                  />
-                )}
+                <div className="section-card">
+                  <div className="section-header">
+                    <h2>3) Clean & AI Assist</h2>
+                    <p>Apply cleaning steps and generate AI recommendations for the active file.</p>
+                  </div>
+                  {uploadedFile && (
+                    <>
+                      <DataCleaner
+                        fileId={uploadedFile.file_id}
+                        onCleanSuccess={handleCleanSuccess}
+                      />
+                      <AIAssistant fileId={currentFileId || uploadedFile.file_id} />
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -76,7 +98,7 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>CSV Data Cleaning Tool v0.1.0 | Data Engineering Made Simple</p>
+        <p>CSV Data Cleaning Tool v0.3.1 | Data Engineering Made Simple</p>
       </footer>
     </div>
   );

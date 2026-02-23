@@ -1,8 +1,8 @@
 .data-analysis {
-  padding: 20px;
+  padding: 4px;
   background-color: #ffffff;
   border-radius: 8px;
-  margin-top: 20px;
+  margin-top: 8px;
 }
 
 .analysis-header {
@@ -69,6 +69,15 @@
 
 .tab-content {
   animation: fadeIn 0.3s ease;
+}
+
+.viz-empty-state {
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+  border: 1px dashed #dfe6e9;
+  border-radius: 8px;
 }
 
 @keyframes fadeIn {
@@ -210,6 +219,8 @@
   padding: 20px;
   text-align: center;
   color: #7f8c8d;
+  background-color: #f8f9fa;
+  border-radius: 8px;
 }
 
 .error {
@@ -217,4 +228,5 @@
   background-color: #fadbd8;
   color: #c0392b;
   border-radius: 8px;
+  border-left: 4px solid #e74c3c;
 }

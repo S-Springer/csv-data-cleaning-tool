@@ -12,6 +12,7 @@ function DataPreview({ fileId, title = '📋 Data Preview' }) {
     const fetchPreview = async () => {
       try {
         setLoading(true);
+        setError(null);
         const result = await previewData(fileId, rows);
         setPreview(result);
       } catch (err) {
@@ -26,7 +27,9 @@ function DataPreview({ fileId, title = '📋 Data Preview' }) {
 
   if (loading) return <div className="preview-loading">Loading preview...</div>;
   if (error) return <div className="preview-error">{error}</div>;
-  if (!preview || preview.data.length === 0) return null;
+  if (!preview || preview.data.length === 0) {
+    return <div className="preview-empty">No rows available for preview.</div>;
+  }
 
   return (
     <div className="data-preview">
@@ -34,7 +37,7 @@ function DataPreview({ fileId, title = '📋 Data Preview' }) {
         <h3>{title}</h3>
         <div className="preview-controls">
           <label>
-            Show rows:
+            Rows to show:
             <select value={rows} onChange={(e) => setRows(Number(e.target.value))}>
               <option value={5}>5</option>
               <option value={10}>10</option>

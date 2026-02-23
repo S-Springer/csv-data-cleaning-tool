@@ -35,6 +35,11 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 - Persistent file metadata tracking (owner, lineage, creation time)
 - File listing and deletion endpoints
 
+🤖 **AI Assistant (MVP)**
+- AI-powered dataset insights and cleaning recommendations
+- Optional user question prompt for targeted guidance
+- Endpoint supports OpenAI-compatible APIs via environment variables
+
 ⚡ **Large-File Batch Processing (MVP)**
 - Chunk-based CSV upload endpoint for large files
 - Batch metadata returned (chunk size, chunk count, detected encoding, total rows)
@@ -222,6 +227,28 @@ The application will open in a native window with the full web interface embedde
   - `remove_outliers` (bool): Remove statistical outliers
 - Operations are applied in sequence: columns → missing → strings → scaling → duplicates → outliers
 - Returns: Cleaned dataset info with new file_id (e.g., `{file_id}_cleaned_1`)
+
+### AI Insights
+**POST** `/api/data/ai/insights/{file_id}`
+- Generate AI recommendations from dataset profile and quality stats
+- Request Body:
+  - `question` (string, optional): Ask a focused question about the dataset
+- Returns: executive summary, cleaning steps, data quality risks, analysis ideas, next best action
+
+## AI Configuration
+
+Set these environment variables in your backend environment before running:
+
+```bash
+AI_API_KEY=your_api_key_here
+AI_MODEL=gpt-4o-mini
+```
+
+Optional for OpenAI-compatible providers (Azure-compatible gateways, self-hosted endpoints, etc.):
+
+```bash
+AI_BASE_URL=https://your-provider-base-url/v1
+```
 
 ### Download Data
 **GET** `/api/data/download/{file_id}`

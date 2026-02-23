@@ -9,10 +9,19 @@ import fastapi  # noqa: F401
 import fastapi.middleware  # noqa: F401
 import fastapi.middleware.cors  # noqa: F401
 import fastapi.staticfiles  # noqa: F401
-import pandas  # noqa: F401
+import pandas #  noqa: F401
 import numpy  # noqa: F401
 import pydantic  # noqa: F401
 import starlette  # noqa: F401
+import sqlalchemy  # noqa: F401
+import sqlalchemy.orm  # noqa: F401
+import jose  # noqa: F401
+import jose.jwt  # noqa: F401
+import passlib  # noqa: F401
+import passlib.context  # noqa: F401
+import passlib.handlers  # noqa: F401
+import passlib.handlers.bcrypt  # noqa: F401
+import openai  # noqa: F401
 
 def base_path():
     if getattr(sys, "frozen", False):

@@ -62,7 +62,11 @@ function FileUpload({ onUploadSuccess }) {
       >
         <div className="upload-content">
           <h2>📁 Upload CSV File</h2>
-          <p>Drag and drop your CSV file here or click to select</p>
+          <p>Drag and drop your dataset here, or click to browse and select a file.</p>
+          <div className="upload-hints">
+            <span className="hint-pill">Accepted: .csv</span>
+            <span className="hint-pill">Encoding auto-detect enabled</span>
+          </div>
           <input
             type="file"
             accept=".csv"
@@ -72,7 +76,7 @@ function FileUpload({ onUploadSuccess }) {
             style={{ display: 'none' }}
           />
           <label htmlFor="file-input" className="upload-button">
-            {isLoading ? 'Uploading...' : 'Choose File'}
+            {isLoading ? 'Uploading Dataset...' : 'Select CSV'}
           </label>
         </div>
       </div>

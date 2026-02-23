@@ -40,3 +40,10 @@ export const downloadData = async (fileId) => {
   return response.data;
 };
 
+export const generateAIInsights = async (fileId, question = '') => {
+  const response = await axios.post(`${API_BASE_URL}/data/ai/insights/${fileId}`, {
+    question,
+  });
+  return response.data;
+};
+
