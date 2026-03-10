@@ -158,15 +158,30 @@ function DataCleaner({ fileId, onCleanSuccess }) {
       <p className="cleaning-order-note">Operations will be applied in the order shown below:</p>
       <p className="cleaning-tip">Tip: click each step title to expand and configure.</p>
 
+      <div className="cleaner-summary-grid">
+        <div className="cleaner-summary-card">
+          <span className="summary-card-label">Configured Steps</span>
+          <span className="summary-card-value">{selectedOptionCount}</span>
+        </div>
+        <div className="cleaner-summary-card">
+          <span className="summary-card-label">Columns to Drop</span>
+          <span className="summary-card-value">{cleanOptions.columns_to_drop.length}</span>
+        </div>
+        <div className="cleaner-summary-card">
+          <span className="summary-card-label">Target File</span>
+          <span className="summary-card-value summary-file" title={fileId}>{fileId}</span>
+        </div>
+      </div>
+
       <div className="cleaning-options">
         <div className={`option ${activeStep === 1 ? 'option-active' : ''}`}>
-          <button className="step-header" onClick={() => setActiveStep(1)} aria-expanded={activeStep === 1}>
+          <button className="step-header" onClick={() => setActiveStep(1)} aria-expanded={activeStep === 1} aria-controls="clean-step-1" id="clean-step-btn-1">
             <span className="step-number">Step 1:</span>
             <span>Drop Columns</span>
             {getStepPill(1)}
           </button>
           {activeStep === 1 && (
-            <>
+            <div id="clean-step-1" role="region" aria-labelledby="clean-step-btn-1">
               <p className="description">Select which columns to keep in your dataset</p>
               <div className="column-selection">
                 <div className="column-buttons">
@@ -195,18 +210,18 @@ function DataCleaner({ fileId, onCleanSuccess }) {
                   </p>
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
 
         <div className={`option ${activeStep === 2 ? 'option-active' : ''}`}>
-          <button className="step-header" onClick={() => setActiveStep(2)} aria-expanded={activeStep === 2}>
+          <button className="step-header" onClick={() => setActiveStep(2)} aria-expanded={activeStep === 2} aria-controls="clean-step-2" id="clean-step-btn-2">
             <span className="step-number">Step 2:</span>
             <span>Fill Missing Values</span>
             {getStepPill(2)}
           </button>
           {activeStep === 2 && (
-            <>
+            <div id="clean-step-2" role="region" aria-labelledby="clean-step-btn-2">
               <div className="sub-options">
                 <label>
                   <input
@@ -255,18 +270,18 @@ function DataCleaner({ fileId, onCleanSuccess }) {
                 </label>
               </div>
               <p className="description">Fill or remove missing values in remaining columns</p>
-            </>
+            </div>
           )}
         </div>
 
         <div className={`option ${activeStep === 3 ? 'option-active' : ''}`}>
-          <button className="step-header" onClick={() => setActiveStep(3)} aria-expanded={activeStep === 3}>
+          <button className="step-header" onClick={() => setActiveStep(3)} aria-expanded={activeStep === 3} aria-controls="clean-step-3" id="clean-step-btn-3">
             <span className="step-number">Step 3:</span>
             <span>Clean String Values</span>
             {getStepPill(3)}
           </button>
           {activeStep === 3 && (
-            <>
+            <div id="clean-step-3" role="region" aria-labelledby="clean-step-btn-3">
               <label>
                 <input
                   type="checkbox"
@@ -276,18 +291,18 @@ function DataCleaner({ fileId, onCleanSuccess }) {
                 <span>Enable string cleanup</span>
               </label>
               <p className="description">Trim leading/trailing spaces and normalize extra whitespace in text columns</p>
-            </>
+            </div>
           )}
         </div>
 
         <div className={`option ${activeStep === 4 ? 'option-active' : ''}`}>
-          <button className="step-header" onClick={() => setActiveStep(4)} aria-expanded={activeStep === 4}>
+          <button className="step-header" onClick={() => setActiveStep(4)} aria-expanded={activeStep === 4} aria-controls="clean-step-4" id="clean-step-btn-4">
             <span className="step-number">Step 4:</span>
             <span>Data Standardization & Normalization</span>
             {getStepPill(4)}
           </button>
           {activeStep === 4 && (
-            <>
+            <div id="clean-step-4" role="region" aria-labelledby="clean-step-btn-4">
               <div className="sub-options">
                 <label>
                   <input
@@ -309,18 +324,18 @@ function DataCleaner({ fileId, onCleanSuccess }) {
                 </label>
               </div>
               <p className="description">Choose one numeric scaling method: z-score standardization or min-max normalization</p>
-            </>
+            </div>
           )}
         </div>
 
         <div className={`option ${activeStep === 5 ? 'option-active' : ''}`}>
-          <button className="step-header" onClick={() => setActiveStep(5)} aria-expanded={activeStep === 5}>
+          <button className="step-header" onClick={() => setActiveStep(5)} aria-expanded={activeStep === 5} aria-controls="clean-step-5" id="clean-step-btn-5">
             <span className="step-number">Step 5:</span>
             <span>Remove Duplicate Rows</span>
             {getStepPill(5)}
           </button>
           {activeStep === 5 && (
-            <>
+            <div id="clean-step-5" role="region" aria-labelledby="clean-step-btn-5">
               <label>
                 <input
                   type="checkbox"
@@ -330,18 +345,18 @@ function DataCleaner({ fileId, onCleanSuccess }) {
                 <span>Enable duplicate removal</span>
               </label>
               <p className="description">Remove duplicate rows from the dataset</p>
-            </>
+            </div>
           )}
         </div>
 
         <div className={`option ${activeStep === 6 ? 'option-active' : ''}`}>
-          <button className="step-header" onClick={() => setActiveStep(6)} aria-expanded={activeStep === 6}>
+          <button className="step-header" onClick={() => setActiveStep(6)} aria-expanded={activeStep === 6} aria-controls="clean-step-6" id="clean-step-btn-6">
             <span className="step-number">Step 6 (Optional):</span>
             <span>Remove Outliers (IQR Method)</span>
             {getStepPill(6)}
           </button>
           {activeStep === 6 && (
-            <>
+            <div id="clean-step-6" role="region" aria-labelledby="clean-step-btn-6">
               <label>
                 <input
                   type="checkbox"
@@ -351,12 +366,12 @@ function DataCleaner({ fileId, onCleanSuccess }) {
                 <span>Enable outlier removal</span>
               </label>
               <p className="description">Remove statistical outliers from numeric columns</p>
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="error-message" role="alert">{error}</div>}
 
       <div className="button-group sticky-action-bar">
         <div className="action-summary">
@@ -376,7 +391,7 @@ function DataCleaner({ fileId, onCleanSuccess }) {
       </div>
 
       {cleanResult && (
-        <div className="cleaning-result">
+        <div className="cleaning-result" role="status" aria-live="polite">
           <h4>✓ Cleaning Complete</h4>
           <div className="status-chip success-chip">Last run succeeded</div>
           <div className="result-stats">

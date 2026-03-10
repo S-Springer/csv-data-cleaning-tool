@@ -1,7 +1,7 @@
 .data-analysis {
   padding: 4px;
   background-color: #ffffff;
-  border-radius: 8px;
+  border-radius: 10px;
   margin-top: 8px;
 }
 
@@ -9,9 +9,9 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #ecf0f1;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e6edf5;
 }
 
 .analysis-header h2 {
@@ -40,26 +40,62 @@
   border: 1px solid #1b5e20;
 }
 
+.quick-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.insight-card {
+  border: 1px solid #e1e9f4;
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.insight-label {
+  color: #6f7f94;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.insight-value {
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 700;
+}
+
 .tabs {
   display: flex;
   gap: 10px;
-  border-bottom: 2px solid #ecf0f1;
-  margin-bottom: 20px;
+  border-bottom: 1px solid #e6edf5;
+  margin-bottom: 16px;
+  overflow-x: auto;
 }
 
 .tab {
-  padding: 10px 20px;
-  background: none;
-  border: none;
+  padding: 9px 14px;
+  background: #f3f7fc;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
   cursor: pointer;
   color: #7f8c8d;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 600;
   border-bottom: 3px solid transparent;
   transition: all 0.3s;
+  white-space: nowrap;
 }
 
 .tab.active {
   color: #3498db;
+  background: #ffffff;
+  border-color: #d9e6f5;
   border-bottom-color: #3498db;
 }
 
@@ -97,11 +133,12 @@
 }
 
 .stat-card {
-  background-color: #f8f9fa;
+  background-color: #f8fbff;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: center;
   border-left: 4px solid #3498db;
+  border: 1px solid #e1e9f4;
 }
 
 .stat-label {
@@ -119,9 +156,13 @@
 
 .quality-container {
   display: flex;
-  gap: 40px;
+  gap: 26px;
   align-items: center;
   margin-top: 20px;
+  border: 1px solid #e1e9f4;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fcfdff;
 }
 
 .quality-score {
@@ -129,8 +170,8 @@
 }
 
 .score-circle {
-  width: 150px;
-  height: 150px;
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
   background: linear-gradient(135deg, #3498db, #2ecc71);
   display: flex;
@@ -139,7 +180,7 @@
 }
 
 .score-value {
-  font-size: 48px;
+  font-size: 34px;
   font-weight: bold;
   color: white;
 }
@@ -187,9 +228,9 @@
 
 .issue-section {
   background-color: #fff3cd;
-  padding: 15px;
+  padding: 14px;
   border-left: 4px solid #f39c12;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 15px;
 }
 
@@ -221,6 +262,7 @@
   color: #7f8c8d;
   background-color: #f8f9fa;
   border-radius: 8px;
+  border: 1px solid #e6edf5;
 }
 
 .error {
@@ -229,4 +271,15 @@
   color: #c0392b;
   border-radius: 8px;
   border-left: 4px solid #e74c3c;
+}
+
+@media (max-width: 900px) {
+  .quick-insights {
+    grid-template-columns: 1fr;
+  }
+
+  .quality-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

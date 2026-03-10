@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     try:
         import webview
-        webview.create_window("CSV Data Cleaning & Analysis Tool", "http://127.0.0.1:8000")
+        webview.create_window("TidyCSV", "http://127.0.0.1:8000")
         webview.start()
     except Exception:
         # fallback: open in default browser

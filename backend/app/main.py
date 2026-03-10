@@ -8,8 +8,8 @@ import numpy as np
 import os
 
 app = FastAPI(
-    title="CSV Data Cleaning & Analysis Tool",
-    description="A tool for cleaning and analyzing CSV data",
+    title="TidyCSV",
+    description="TidyCSV: AI-assisted CSV cleaning and analysis",
     version="0.1.0",
     json_encoders={np.floating: lambda v: None if (np.isnan(v) or np.isinf(v)) else float(v)}
 )

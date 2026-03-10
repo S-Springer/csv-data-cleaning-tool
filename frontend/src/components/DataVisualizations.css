@@ -1,29 +1,29 @@
 .visualizations-container {
   background: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin-top: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  border: 1px solid #e1e9f4;
+  padding: 16px;
+  margin-top: 16px;
 }
 
 .visualizations-container h3 {
-  color: #333;
+  color: #2c3e50;
   margin-top: 0;
   font-size: 18px;
   font-weight: 600;
-  border-bottom: 2px solid #007bff;
+  border-bottom: 1px solid #e6edf5;
   padding-bottom: 10px;
 }
 
 .visualization-section {
-  margin-bottom: 30px;
+  margin-bottom: 22px;
 }
 
 .visualization-section h4 {
-  color: #555;
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 15px;
+  color: #45586f;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
 }
 
 .charts-grid {
@@ -34,20 +34,21 @@
 }
 
 .chart-wrapper {
-  background: #f9f9f9;
-  border-radius: 6px;
+  background: #f8fbff;
+  border-radius: 10px;
   padding: 15px;
-  border: 1px solid #e0e0e0;
-  transition: box-shadow 0.2s ease;
+  border: 1px solid #e1e9f4;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .chart-wrapper:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 18px rgba(14, 25, 50, 0.08);
+  transform: translateY(-1px);
 }
 
 .chart-wrapper h5 {
   margin: 0 0 10px 0;
-  color: #333;
+  color: #2f3b52;
   font-size: 14px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -56,11 +57,12 @@
 }
 
 .visualizations-placeholder {
-  background: #f0f0f0;
-  border-radius: 6px;
+  background: #f8fbff;
+  border: 1px dashed #dbe6f4;
+  border-radius: 8px;
   padding: 20px;
   text-align: center;
-  color: #999;
+  color: #728299;
   font-size: 14px;
 }
 

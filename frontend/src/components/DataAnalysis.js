@@ -45,11 +45,13 @@ function DataAnalysis({ fileId }) {
     fetchAnalysis();
   }, [fileId]);
 
-  if (loading) return <div className="loading">Analyzing dataset...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (loading) return <div className="loading" role="status" aria-live="polite">Analyzing dataset...</div>;
+  if (error) return <div className="error" role="alert">{error}</div>;
   if (!analysis) return null;
 
   const { basic_stats, quality_score, missing_values, duplicates } = analysis;
+  const missingTotal = missing_values?.total_missing || 0;
+  const duplicateTotal = duplicates?.total_duplicates || 0;
 
   return (
     <div className="data-analysis">
@@ -59,38 +61,69 @@ function DataAnalysis({ fileId }) {
           {isDataCleaned ? '✓ Cleaned Data' : '📁 Original Data'}
         </div>
       </div>
+
+      <div className="quick-insights">
+        <div className="insight-card">
+          <span className="insight-label">Quality Score</span>
+          <span className="insight-value">{quality_score.overall_score}%</span>
+        </div>
+        <div className="insight-card">
+          <span className="insight-label">Missing Cells</span>
+          <span className="insight-value">{missingTotal}</span>
+        </div>
+        <div className="insight-card">
+          <span className="insight-label">Duplicate Rows</span>
+          <span className="insight-value">{duplicateTotal}</span>
+        </div>
+      </div>
       
       <DataPreview fileId={fileId} title="📋 Data Preview" />
       
-      <div className="tabs">
+      <div className="tabs" role="tablist" aria-label="Analysis Sections">
         <button
           className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
+          role="tab"
+          id="analysis-tab-overview"
+          aria-selected={activeTab === 'overview'}
+          aria-controls="analysis-panel-overview"
         >
           Overview
         </button>
         <button
           className={`tab ${activeTab === 'visualizations' ? 'active' : ''}`}
           onClick={() => setActiveTab('visualizations')}
+          role="tab"
+          id="analysis-tab-visualizations"
+          aria-selected={activeTab === 'visualizations'}
+          aria-controls="analysis-panel-visualizations"
         >
-          📊 Visualizations
+          Visualizations
         </button>
         <button
           className={`tab ${activeTab === 'quality' ? 'active' : ''}`}
           onClick={() => setActiveTab('quality')}
+          role="tab"
+          id="analysis-tab-quality"
+          aria-selected={activeTab === 'quality'}
+          aria-controls="analysis-panel-quality"
         >
           Quality Score
         </button>
         <button
           className={`tab ${activeTab === 'issues' ? 'active' : ''}`}
           onClick={() => setActiveTab('issues')}
+          role="tab"
+          id="analysis-tab-issues"
+          aria-selected={activeTab === 'issues'}
+          aria-controls="analysis-panel-issues"
         >
-          Data Issues
+          Issues
         </button>
       </div>
 
       {activeTab === 'overview' && (
-        <div className="tab-content">
+        <div className="tab-content" role="tabpanel" id="analysis-panel-overview" aria-labelledby="analysis-tab-overview">
           <h3>Dataset Overview</h3>
           <div className="stats-grid">
             <div className="stat-card">
@@ -110,7 +143,7 @@ function DataAnalysis({ fileId }) {
       )}
 
       {activeTab === 'visualizations' && (
-        <div className="tab-content">
+        <div className="tab-content" role="tabpanel" id="analysis-panel-visualizations" aria-labelledby="analysis-tab-visualizations">
           {(chartData?.data || []).length > 0 ? (
             <DataVisualizations
               data={chartData?.data || []}
@@ -123,7 +156,7 @@ function DataAnalysis({ fileId }) {
       )}
 
       {activeTab === 'quality' && (
-        <div className="tab-content">
+        <div className="tab-content" role="tabpanel" id="analysis-panel-quality" aria-labelledby="analysis-tab-quality">
           <h3>Data Quality Score</h3>
           <div className="quality-container">
             <div className="quality-score">
@@ -158,7 +191,7 @@ function DataAnalysis({ fileId }) {
       )}
 
       {activeTab === 'issues' && (
-        <div className="tab-content">
+        <div className="tab-content" role="tabpanel" id="analysis-panel-issues" aria-labelledby="analysis-tab-issues">
           <h3>Data Issues</h3>
           <div className="issues-container">
             {Object.keys(missing_values.columns).length > 0 && (

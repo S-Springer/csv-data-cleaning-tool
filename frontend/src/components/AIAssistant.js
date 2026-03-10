@@ -37,6 +37,7 @@ function AIAssistant({ fileId }) {
         value={question}
         onChange={(event) => setQuestion(event.target.value)}
         placeholder="Optional: Ask a specific question about this dataset..."
+        aria-label="Question for AI Assistant"
         rows={3}
       />
 
@@ -44,7 +45,7 @@ function AIAssistant({ fileId }) {
         <button className="btn btn-primary" onClick={handleGenerate} disabled={isLoading || !fileId}>
           {isLoading ? 'Generating Insights...' : 'Generate Insights'}
         </button>
-        {!isLoading && result && <span className="ai-status-chip">Insights ready</span>}
+        {!isLoading && result && <span className="ai-status-chip" role="status" aria-live="polite">Insights ready</span>}
       </div>
 
       {!result && !error && (
@@ -53,7 +54,7 @@ function AIAssistant({ fileId }) {
         </div>
       )}
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="error-message" role="alert">{error}</div>}
 
       {result && (
         <div className="ai-result">

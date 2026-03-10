@@ -33,6 +33,13 @@ function FileUpload({ onUploadSuccess }) {
     }
   };
 
+  const handleAreaKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      document.getElementById('file-input')?.click();
+    }
+  };
+
   const handleFile = async (file) => {
     if (!file.name.endsWith('.csv')) {
       setError('Please upload a CSV file');
@@ -59,6 +66,10 @@ function FileUpload({ onUploadSuccess }) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload CSV file"
+        onKeyDown={handleAreaKeyDown}
       >
         <div className="upload-content">
           <h2>📁 Upload CSV File</h2>
@@ -80,7 +91,7 @@ function FileUpload({ onUploadSuccess }) {
           </label>
         </div>
       </div>
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="error-message" role="alert">{error}</div>}
     </div>
   );
 }
