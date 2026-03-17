@@ -198,6 +198,10 @@
   color: #7f8c8d;
   font-size: 12px;
 }
+.history-meta {
+  color: #5f6f84;
+  font-size: 12px;
+}
 
 .active-file {
   color: #7f8c8d;
@@ -215,6 +219,11 @@
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 600;
+}
+.cleaner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .btn-primary {
@@ -239,6 +248,28 @@
 
 .btn-secondary:hover {
   background-color: #229954;
+}
+
+.download-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.download-format-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3d4e66;
+}
+
+.download-format-select {
+  border: 1px solid #cddcec;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #2c3e50;
+  font-size: 14px;
 }
 
 .error-message {
@@ -383,6 +414,24 @@
   color: #856404;
   font-size: 0.9em;
 }
+.btn-neutral {
+  background-color: #eef3f8;
+  color: #334155;
+  border: 1px solid #d7e2ef;
+  font-size: 14px;
+  padding: 10px 16px;
+}
+
+.btn-neutral:hover:not(:disabled) {
+  background-color: #e3ebf4;
+}
+
+.btn-neutral:disabled {
+  color: #9aa7b8;
+  border-color: #e4ebf3;
+  background-color: #f6f9fc;
+  cursor: not-allowed;
+}
 
 @media (max-width: 768px) {
   .cleaner-summary-grid {
@@ -396,5 +445,10 @@
 
   .active-file {
     max-width: 100%;
+  }
+  .cleaner-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 }

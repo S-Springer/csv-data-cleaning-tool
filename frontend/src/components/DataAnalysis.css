@@ -116,6 +116,63 @@
   border-radius: 8px;
 }
 
+.advanced-stats-summary {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.stat-chip {
+  border: 1px solid #dce7f5;
+  border-radius: 8px;
+  background: #f8fbff;
+  padding: 10px 12px;
+  min-width: 140px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #45586f;
+}
+
+.stat-chip strong {
+  color: #243447;
+}
+
+.stats-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e1e9f4;
+  border-radius: 10px;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.stats-table thead th {
+  background: #f2f7fd;
+  color: #334155;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 10px;
+  border-bottom: 1px solid #edf2f8;
+  text-align: right;
+  font-size: 13px;
+}
+
+.stats-table th:first-child,
+.stats-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: #2f3b52;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -281,5 +338,9 @@
   .quality-container {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .advanced-stats-summary {
+    flex-direction: column;
   }
 }

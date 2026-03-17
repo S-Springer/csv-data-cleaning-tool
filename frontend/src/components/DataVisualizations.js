@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import './DataVisualizations.css';
 
-function DataVisualizations({ data, columns }) {
+function DataVisualizations({ data, columns, correlationMatrix }) {
   if (!data || !columns || data.length === 0) {
     return <div className="visualizations-placeholder">No data to visualize</div>;
   }
@@ -71,6 +71,70 @@ function DataVisualizations({ data, columns }) {
           </div>
         </div>
       )}
+
+      {correlationMatrix && !correlationMatrix.error && (
+        <div className="visualization-section">
+          <h4>Correlation Heatmap</h4>
+          <CorrelationHeatmap matrix={correlationMatrix} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CorrelationHeatmap({ matrix }) {
+  const columns = matrix?.columns || [];
+  const values = matrix?.correlation_matrix || {};
+
+  if (columns.length < 2) {
+    return <div className="visualizations-placeholder">Need at least 2 numeric columns to show a correlation heatmap.</div>;
+  }
+
+  const getHeatClass = (value) => {
+    if (value == null) return 'corr-cell corr-none';
+    if (value >= 0.75) return 'corr-cell corr-pos-strong';
+    if (value >= 0.4) return 'corr-cell corr-pos-mid';
+    if (value > 0) return 'corr-cell corr-pos-light';
+    if (value <= -0.75) return 'corr-cell corr-neg-strong';
+    if (value <= -0.4) return 'corr-cell corr-neg-mid';
+    if (value < 0) return 'corr-cell corr-neg-light';
+    return 'corr-cell corr-none';
+  };
+
+  return (
+    <div className="corr-wrap">
+      <div className="corr-legend">
+        <span className="legend-chip neg">Negative</span>
+        <span className="legend-chip neutral">Near 0</span>
+        <span className="legend-chip pos">Positive</span>
+      </div>
+      <div className="corr-table-scroll">
+        <table className="corr-table">
+          <thead>
+            <tr>
+              <th className="sticky-head">Column</th>
+              {columns.map((col) => (
+                <th key={col}>{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {columns.map((rowCol) => (
+              <tr key={rowCol}>
+                <th className="sticky-col">{rowCol}</th>
+                {columns.map((col) => {
+                  const value = values?.[rowCol]?.[col];
+                  return (
+                    <td key={`${rowCol}-${col}`} className={getHeatClass(value)}>
+                      {value == null ? '-' : Number(value).toFixed(2)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

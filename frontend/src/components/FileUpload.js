@@ -41,8 +41,9 @@ function FileUpload({ onUploadSuccess }) {
   };
 
   const handleFile = async (file) => {
-    if (!file.name.endsWith('.csv')) {
-      setError('Please upload a CSV file');
+    const isSupportedFile = /\.(csv|xlsx|json)$/i.test(file.name || '');
+    if (!isSupportedFile) {
+      setError('Please upload a CSV, XLSX, or JSON file');
       return;
     }
 
@@ -72,22 +73,22 @@ function FileUpload({ onUploadSuccess }) {
         onKeyDown={handleAreaKeyDown}
       >
         <div className="upload-content">
-          <h2>📁 Upload CSV File</h2>
+          <h2>📁 Upload Data File</h2>
           <p>Drag and drop your dataset here, or click to browse and select a file.</p>
           <div className="upload-hints">
-            <span className="hint-pill">Accepted: .csv</span>
+            <span className="hint-pill">Accepted: .csv, .xlsx, .json</span>
             <span className="hint-pill">Encoding auto-detect enabled</span>
           </div>
           <input
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.json,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={handleFileInput}
             disabled={isLoading}
             id="file-input"
             style={{ display: 'none' }}
           />
           <label htmlFor="file-input" className="upload-button">
-            {isLoading ? 'Uploading Dataset...' : 'Select CSV'}
+            {isLoading ? 'Uploading Dataset...' : 'Select File'}
           </label>
         </div>
       </div>

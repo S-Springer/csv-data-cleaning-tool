@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { analyzeData, previewData } from '../services/api';
+import { analyzeData, getAdvancedStats, previewData } from '../services/api';
 import DataPreview from './DataPreview';
 import DataVisualizations from './DataVisualizations';
 import './DataAnalysis.css';
@@ -11,6 +11,7 @@ function DataAnalysis({ fileId }) {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isDataCleaned, setIsDataCleaned] = useState(false);
+  const [advancedStats, setAdvancedStats] = useState(null);
 
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -18,6 +19,7 @@ function DataAnalysis({ fileId }) {
         setLoading(true);
         setError(null);
         setChartData(null); // Clear cached chart data when switching files
+        setAdvancedStats(null);
         
         // Check if this is a cleaned file (ends with _cleaned)
         const cleaned = fileId.includes('_cleaned');
@@ -25,6 +27,13 @@ function DataAnalysis({ fileId }) {
         
         const result = await analyzeData(fileId);
         setAnalysis(result);
+
+        try {
+          const statsResult = await getAdvancedStats(fileId);
+          setAdvancedStats(statsResult?.advanced_stats || null);
+        } catch (e) {
+          console.warn('Could not fetch advanced stats:', e);
+        }
         
         // Fetch preview data for visualizations (get more rows for better charts)
         try {
@@ -37,6 +46,7 @@ function DataAnalysis({ fileId }) {
         setError(err.message || 'Failed to analyze data');
         setAnalysis(null);
         setChartData(null);
+        setAdvancedStats(null);
       } finally {
         setLoading(false);
       }
@@ -111,6 +121,16 @@ function DataAnalysis({ fileId }) {
           Quality Score
         </button>
         <button
+          className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
+          onClick={() => setActiveTab('stats')}
+          role="tab"
+          id="analysis-tab-stats"
+          aria-selected={activeTab === 'stats'}
+          aria-controls="analysis-panel-stats"
+        >
+          Stats
+        </button>
+        <button
           className={`tab ${activeTab === 'issues' ? 'active' : ''}`}
           onClick={() => setActiveTab('issues')}
           role="tab"
@@ -142,12 +162,76 @@ function DataAnalysis({ fileId }) {
         </div>
       )}
 
+      {activeTab === 'stats' && (
+        <div className="tab-content" role="tabpanel" id="analysis-panel-stats" aria-labelledby="analysis-tab-stats">
+          <h3>Advanced Numeric Statistics</h3>
+          {advancedStats?.error ? (
+            <div className="viz-empty-state">{advancedStats.error}</div>
+          ) : (
+            <>
+              <div className="advanced-stats-summary">
+                <div className="stat-chip">
+                  <span>Numeric Columns</span>
+                  <strong>{advancedStats?.summary?.numeric_columns ?? 0}</strong>
+                </div>
+                <div className="stat-chip">
+                  <span>Rows</span>
+                  <strong>{advancedStats?.summary?.row_count ?? 0}</strong>
+                </div>
+              </div>
+
+              {advancedStats?.columns && Object.keys(advancedStats.columns).length > 0 ? (
+                <div className="stats-table-wrap">
+                  <table className="stats-table">
+                    <thead>
+                      <tr>
+                        <th>Column</th>
+                        <th>Mean</th>
+                        <th>Std</th>
+                        <th>Min</th>
+                        <th>P25</th>
+                        <th>Median</th>
+                        <th>P75</th>
+                        <th>P95</th>
+                        <th>IQR</th>
+                        <th>Skew</th>
+                        <th>Kurtosis</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(advancedStats.columns).map(([columnName, stats]) => (
+                        <tr key={columnName}>
+                          <td>{columnName}</td>
+                          <td>{stats.mean == null ? '-' : Number(stats.mean).toFixed(2)}</td>
+                          <td>{stats.std == null ? '-' : Number(stats.std).toFixed(2)}</td>
+                          <td>{stats.min == null ? '-' : Number(stats.min).toFixed(2)}</td>
+                          <td>{stats.percentiles?.p25 == null ? '-' : Number(stats.percentiles.p25).toFixed(2)}</td>
+                          <td>{stats.percentiles?.p50 == null ? '-' : Number(stats.percentiles.p50).toFixed(2)}</td>
+                          <td>{stats.percentiles?.p75 == null ? '-' : Number(stats.percentiles.p75).toFixed(2)}</td>
+                          <td>{stats.percentiles?.p95 == null ? '-' : Number(stats.percentiles.p95).toFixed(2)}</td>
+                          <td>{stats.iqr == null ? '-' : Number(stats.iqr).toFixed(2)}</td>
+                          <td>{stats.skewness == null ? '-' : Number(stats.skewness).toFixed(2)}</td>
+                          <td>{stats.kurtosis == null ? '-' : Number(stats.kurtosis).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="viz-empty-state">No numeric columns available for advanced stats.</div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {activeTab === 'visualizations' && (
         <div className="tab-content" role="tabpanel" id="analysis-panel-visualizations" aria-labelledby="analysis-tab-visualizations">
           {(chartData?.data || []).length > 0 ? (
             <DataVisualizations
               data={chartData?.data || []}
               columns={chartData?.columns || []}
+              correlationMatrix={analysis?.correlation_matrix}
             />
           ) : (
             <div className="viz-empty-state">Preview data is not available yet for charts.</div>

@@ -1,11 +1,14 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from starlette.requests import Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 import io
+import base64
 from typing import Optional, Any, Dict, List
 from sqlalchemy.orm import Session
+from app.core.rate_limit import limiter
 from app.services.cleaner import DataCleaner, convert_numpy_types
 from app.services.analyzer import DataAnalyzer
 from app.services.ai_assistant import AIAssistant
@@ -19,6 +22,42 @@ router = APIRouter(prefix="/api/data", tags=["data"])
 uploaded_data = {}
 # Track cleaning iteration count for unique file IDs
 clean_counters = {}
+
+
+def _parse_uploaded_file(file_name: str, contents: bytes) -> pd.DataFrame:
+    """Parse uploaded tabular files (.csv, .xlsx, .json) with safe fallbacks."""
+    lower_name = file_name.lower()
+
+    if lower_name.endswith('.csv'):
+        encodings_to_try = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']
+        last_error = None
+        for encoding in encodings_to_try:
+            try:
+                return pd.read_csv(io.BytesIO(contents), encoding=encoding)
+            except (UnicodeDecodeError, Exception) as e:
+                last_error = e
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to decode CSV file. Tried encodings: {', '.join(encodings_to_try)}. Error: {str(last_error)}",
+        )
+
+    if lower_name.endswith('.xlsx'):
+        try:
+            return pd.read_excel(io.BytesIO(contents))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to parse Excel file: {str(e)}")
+
+    if lower_name.endswith('.json'):
+        try:
+            # Support both record arrays and JSON-lines payloads.
+            try:
+                return pd.read_json(io.BytesIO(contents))
+            except ValueError:
+                return pd.read_json(io.BytesIO(contents), lines=True)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to parse JSON file: {str(e)}")
+
+    raise HTTPException(status_code=400, detail="Only CSV, XLSX, and JSON files are supported")
 
 
 def _generate_unique_file_id(base_name: str, db: Session) -> str:
@@ -81,7 +120,9 @@ class AIInsightRequest(BaseModel):
 
 
 @router.post("/upload")
+@limiter.limit("20/minute")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_user)
@@ -90,31 +131,18 @@ async def upload_file(
     try:
         print(f"Received file: {file.filename}, content_type: {file.content_type}")
         
-        if not file.filename.endswith('.csv'):
-            raise HTTPException(status_code=400, detail="Only CSV files are supported")
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="File name is required")
+
+        allowed_extensions = ('.csv', '.xlsx', '.json')
+        if not file.filename.lower().endswith(allowed_extensions):
+            raise HTTPException(status_code=400, detail="Only CSV, XLSX, and JSON files are supported")
         
         contents = await file.read()
         print(f"File size: {len(contents)} bytes")
         
-        # Try multiple encodings to handle different CSV file formats
-        encodings_to_try = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']
-        df = None
-        last_error = None
-        
-        for encoding in encodings_to_try:
-            try:
-                df = pd.read_csv(io.BytesIO(contents), encoding=encoding)
-                print(f"Successfully loaded with {encoding} encoding, shape: {df.shape}")
-                break
-            except (UnicodeDecodeError, Exception) as e:
-                last_error = e
-                continue
-        
-        if df is None:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Failed to decode CSV file. Tried encodings: {', '.join(encodings_to_try)}. Error: {str(last_error)}"
-            )
+        df = _parse_uploaded_file(file.filename, contents)
+        print(f"Successfully loaded file, shape: {df.shape}")
         
         file_id = _generate_unique_file_id(file.filename, db)
         uploaded_data[file_id] = df
@@ -148,7 +176,9 @@ async def upload_file(
 
 
 @router.post("/upload/batch")
+@limiter.limit("20/minute")
 async def upload_file_batch(
+    request: Request,
     file: UploadFile = File(...),
     chunk_size: int = 100000,
     db: Session = Depends(get_db),
@@ -227,7 +257,8 @@ async def upload_file_batch(
 
 
 @router.get("/preview/{file_id}")
-def preview_data(file_id: str, rows: int = 5):
+@limiter.limit("120/minute")
+def preview_data(request: Request, file_id: str, rows: int = 5):
     """Get preview of data (first N rows or sampled for large datasets)"""
     if file_id not in uploaded_data:
         raise HTTPException(status_code=404, detail="File not found")
@@ -266,7 +297,8 @@ def preview_data(file_id: str, rows: int = 5):
 
 
 @router.get("/analyze/{file_id}")
-def analyze_data(file_id: str):
+@limiter.limit("60/minute")
+def analyze_data(request: Request, file_id: str):
     """Analyze uploaded data"""
     if file_id not in uploaded_data:
         raise HTTPException(status_code=404, detail="File not found")
@@ -277,6 +309,7 @@ def analyze_data(file_id: str):
         "file_id": file_id,
         "basic_stats": DataAnalyzer.get_basic_stats(df),
         "column_stats": DataAnalyzer.get_column_stats(df),
+        "correlation_matrix": DataAnalyzer.get_correlation_matrix(df),
         "quality_score": DataAnalyzer.get_data_quality_score(df),
         "missing_values": DataCleaner.detect_missing_values(df),
         "duplicates": DataCleaner.detect_duplicates(df)
@@ -286,8 +319,24 @@ def analyze_data(file_id: str):
     return convert_numpy_types(response)
 
 
+@router.get("/stats/{file_id}")
+@limiter.limit("60/minute")
+def get_advanced_stats(request: Request, file_id: str):
+    """Get advanced numeric distribution stats for the uploaded dataset."""
+    if file_id not in uploaded_data:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    df = uploaded_data[file_id]
+    response = {
+        "file_id": file_id,
+        "advanced_stats": DataAnalyzer.get_advanced_stats(df),
+    }
+    return convert_numpy_types(response)
+
+
 @router.post("/ai/insights/{file_id}")
-def generate_ai_insights(file_id: str, request: AIInsightRequest):
+@limiter.limit("15/minute")
+def generate_ai_insights(request: Request, file_id: str, payload: AIInsightRequest):
     """Generate AI-powered recommendations for uploaded data."""
     if file_id not in uploaded_data:
         raise HTTPException(status_code=404, detail="File not found")
@@ -304,7 +353,7 @@ def generate_ai_insights(file_id: str, request: AIInsightRequest):
         file_id=file_id,
         df=df,
         analysis=analysis,
-        question=request.question,
+        question=payload.question,
     )
     return convert_numpy_types(result)
 
@@ -388,17 +437,38 @@ def clean_data(
 
 
 @router.get("/download/{file_id}")
-def download_data(file_id: str):
-    """Download processed data as CSV"""
+def download_data(file_id: str, format: str = "csv"):
+    """Download processed data as CSV, JSON, or XLSX."""
     if file_id not in uploaded_data:
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     df = uploaded_data[file_id]
-    csv_content = df.to_csv(index=False)
-    
+
+    export_format = (format or "csv").lower()
+    if export_format not in ("csv", "json", "xlsx"):
+        raise HTTPException(status_code=400, detail="Supported formats: csv, json, xlsx")
+
+    if export_format == "csv":
+        content = df.to_csv(index=False)
+        encoding = "utf-8"
+        mime_type = "text/csv"
+    elif export_format == "json":
+        content = df.to_json(orient='records', indent=2)
+        encoding = "utf-8"
+        mime_type = "application/json"
+    else:
+        excel_buffer = io.BytesIO()
+        df.to_excel(excel_buffer, index=False)
+        content = base64.b64encode(excel_buffer.getvalue()).decode('ascii')
+        encoding = "base64"
+        mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
     return {
         "file_id": file_id,
-        "csv": csv_content,
+        "format": export_format,
+        "encoding": encoding,
+        "mime_type": mime_type,
+        "content": content,
         "rows": len(df),
         "columns": len(df.columns)
     }

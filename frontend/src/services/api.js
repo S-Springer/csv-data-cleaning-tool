@@ -30,13 +30,20 @@ export const analyzeData = async (fileId) => {
   return response.data;
 };
 
+export const getAdvancedStats = async (fileId) => {
+  const response = await axios.get(`${API_BASE_URL}/data/stats/${fileId}`);
+  return response.data;
+};
+
 export const cleanData = async (fileId, options) => {
   const response = await axios.post(`${API_BASE_URL}/data/clean/${fileId}`, options);
   return response.data;
 };
 
-export const downloadData = async (fileId) => {
-  const response = await axios.get(`${API_BASE_URL}/data/download/${fileId}`);
+export const downloadData = async (fileId, format = 'csv') => {
+  const response = await axios.get(`${API_BASE_URL}/data/download/${fileId}`, {
+    params: { format },
+  });
   return response.data;
 };
 

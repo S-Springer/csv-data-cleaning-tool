@@ -66,6 +66,109 @@
   font-size: 14px;
 }
 
+.corr-wrap {
+  background: #f8fbff;
+  border: 1px solid #e1e9f4;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.corr-legend {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.legend-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.legend-chip.neg {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.legend-chip.neutral {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.legend-chip.pos {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.corr-table-scroll {
+  overflow-x: auto;
+}
+
+.corr-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  min-width: 520px;
+}
+
+.corr-table th,
+.corr-table td {
+  text-align: center;
+  font-size: 12px;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.corr-table thead th {
+  background: #edf2f8;
+  color: #334155;
+  font-weight: 700;
+}
+
+.sticky-col,
+.sticky-head {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #edf2f8;
+  text-align: left;
+  min-width: 110px;
+}
+
+.corr-cell {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.corr-none {
+  background: #f1f5f9;
+}
+
+.corr-pos-light {
+  background: #bbf7d0;
+}
+
+.corr-pos-mid {
+  background: #86efac;
+}
+
+.corr-pos-strong {
+  background: #4ade80;
+}
+
+.corr-neg-light {
+  background: #fecaca;
+}
+
+.corr-neg-mid {
+  background: #fca5a5;
+}
+
+.corr-neg-strong {
+  background: #f87171;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .charts-grid {

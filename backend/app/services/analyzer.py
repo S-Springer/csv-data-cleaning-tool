@@ -146,3 +146,68 @@ class DataAnalyzer:
             "correlation_matrix": corr_dict
         }
         return result
+
+    @staticmethod
+    def get_advanced_stats(df: pd.DataFrame) -> Dict[str, Any]:
+        """Get advanced distribution stats and percentiles for numeric columns."""
+        numeric_df = df.select_dtypes(include=[np.number])
+
+        if len(numeric_df.columns) == 0:
+            return {"error": "No numeric columns found", "columns": {}}
+
+        columns: Dict[str, Any] = {}
+        for col in numeric_df.columns:
+            series = numeric_df[col].dropna()
+            if len(series) == 0:
+                columns[str(col)] = {
+                    "count": 0,
+                    "mean": None,
+                    "std": None,
+                    "min": None,
+                    "max": None,
+                    "iqr": None,
+                    "skewness": None,
+                    "kurtosis": None,
+                    "percentiles": {
+                        "p5": None,
+                        "p25": None,
+                        "p50": None,
+                        "p75": None,
+                        "p95": None,
+                    },
+                }
+                continue
+
+            p5 = series.quantile(0.05)
+            p25 = series.quantile(0.25)
+            p50 = series.quantile(0.50)
+            p75 = series.quantile(0.75)
+            p95 = series.quantile(0.95)
+
+            columns[str(col)] = {
+                "count": int(series.count()),
+                "mean": float(series.mean()),
+                "std": float(series.std()) if series.count() > 1 else None,
+                "min": float(series.min()),
+                "max": float(series.max()),
+                "iqr": float(p75 - p25),
+                "skewness": float(series.skew()) if series.count() > 2 else None,
+                "kurtosis": float(series.kurtosis()) if series.count() > 3 else None,
+                "percentiles": {
+                    "p5": float(p5),
+                    "p25": float(p25),
+                    "p50": float(p50),
+                    "p75": float(p75),
+                    "p95": float(p95),
+                },
+            }
+
+        summary = {
+            "numeric_columns": int(len(numeric_df.columns)),
+            "row_count": int(len(df)),
+        }
+
+        return convert_numpy_types({
+            "summary": summary,
+            "columns": columns,
+        })

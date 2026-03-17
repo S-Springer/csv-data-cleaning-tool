@@ -1,7 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cleanData, downloadData, previewData } from '../services/api';
 import DataPreview from './DataPreview';
 import './DataCleaner.css';
+
+const INITIAL_CLEAN_OPTIONS = {
+  remove_duplicates: false,
+  fill_missing: null,
+  clean_strings: false,
+  standardize_data: null,
+  remove_outliers: false,
+  columns_to_drop: [],
+};
 
 function DataCleaner({ fileId, onCleanSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -9,15 +18,38 @@ function DataCleaner({ fileId, onCleanSuccess }) {
   const [activeStep, setActiveStep] = useState(1);
   const [columns, setColumns] = useState([]);
   const [selectedColumnsToKeep, setSelectedColumnsToKeep] = useState(new Set());
-  const [cleanOptions, setCleanOptions] = useState({
-    remove_duplicates: false,
-    fill_missing: null,
-    clean_strings: false,
-    standardize_data: null,
-    remove_outliers: false,
-    columns_to_drop: [],
-  });
+  const [cleanOptions, setCleanOptions] = useState(INITIAL_CLEAN_OPTIONS);
   const [cleanResult, setCleanResult] = useState(null);
+  const [downloadFormat, setDownloadFormat] = useState('csv');
+  const [historyStack, setHistoryStack] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const historyIndexRef = useRef(-1);
+
+  useEffect(() => {
+    historyIndexRef.current = historyIndex;
+  }, [historyIndex]);
+
+  const applySnapshot = (snapshot) => {
+    setCleanOptions(snapshot.cleanOptions);
+    setSelectedColumnsToKeep(new Set(snapshot.selectedColumnsToKeep));
+  };
+
+  const pushHistoryState = (nextOptions, nextSelectedColumns) => {
+    const snapshot = {
+      cleanOptions: nextOptions,
+      selectedColumnsToKeep: [...nextSelectedColumns],
+    };
+
+    setCleanOptions(nextOptions);
+    setSelectedColumnsToKeep(new Set(nextSelectedColumns));
+
+    setHistoryStack((prev) => {
+      const currentIndex = historyIndexRef.current;
+      const base = currentIndex >= 0 ? prev.slice(0, currentIndex + 1) : [];
+      return [...base, snapshot];
+    });
+    setHistoryIndex((prev) => prev + 1);
+  };
 
   // Fetch column names on component mount
   useEffect(() => {
@@ -26,7 +58,13 @@ function DataCleaner({ fileId, onCleanSuccess }) {
         const preview = await previewData(fileId, 1);
         if (preview.columns) {
           setColumns(preview.columns);
-          setSelectedColumnsToKeep(new Set(preview.columns)); // Initially select all
+          const initialSnapshot = {
+            cleanOptions: { ...INITIAL_CLEAN_OPTIONS },
+            selectedColumnsToKeep: [...preview.columns],
+          };
+          applySnapshot(initialSnapshot);
+          setHistoryStack([initialSnapshot]);
+          setHistoryIndex(0);
         }
       } catch (err) {
         console.error('Failed to fetch columns:', err);
@@ -39,6 +77,9 @@ function DataCleaner({ fileId, onCleanSuccess }) {
     setActiveStep(1);
     setCleanResult(null);
   }, [fileId]);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex >= 0 && historyIndex < historyStack.length - 1;
 
   const selectedOptionCount = [
     cleanOptions.columns_to_drop.length > 0,
@@ -66,60 +107,86 @@ function DataCleaner({ fileId, onCleanSuccess }) {
   };
 
   const handleOptionChange = (option) => {
-    setCleanOptions((prev) => ({
-      ...prev,
-      [option]: !prev[option],
-    }));
+    const nextOptions = {
+      ...cleanOptions,
+      [option]: !cleanOptions[option],
+    };
+    pushHistoryState(nextOptions, selectedColumnsToKeep);
   };
 
   const handleFillMissingChange = (strategy) => {
-    setCleanOptions((prev) => ({
-      ...prev,
-      fill_missing: prev.fill_missing === strategy ? null : strategy,
-    }));
+    const nextOptions = {
+      ...cleanOptions,
+      fill_missing: cleanOptions.fill_missing === strategy ? null : strategy,
+    };
+    pushHistoryState(nextOptions, selectedColumnsToKeep);
   };
 
   const handleStandardizeChange = (method) => {
-    setCleanOptions((prev) => ({
-      ...prev,
-      standardize_data: prev.standardize_data === method ? null : method,
-    }));
+    const nextOptions = {
+      ...cleanOptions,
+      standardize_data: cleanOptions.standardize_data === method ? null : method,
+    };
+    pushHistoryState(nextOptions, selectedColumnsToKeep);
   };
 
   const handleColumnToggle = (column) => {
-    setSelectedColumnsToKeep((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(column)) {
-        newSet.delete(column);
-      } else {
-        newSet.add(column);
-      }
-      
-      // Update columns_to_drop based on selected columns
-      const columnsToDropList = columns.filter(col => !newSet.has(col));
-      setCleanOptions((opts) => ({
-        ...opts,
-        columns_to_drop: columnsToDropList,
-      }));
-      
-      return newSet;
-    });
+    const newSet = new Set(selectedColumnsToKeep);
+    if (newSet.has(column)) {
+      newSet.delete(column);
+    } else {
+      newSet.add(column);
+    }
+
+    const columnsToDropList = columns.filter(col => !newSet.has(col));
+    const nextOptions = {
+      ...cleanOptions,
+      columns_to_drop: columnsToDropList,
+    };
+
+    pushHistoryState(nextOptions, newSet);
   };
 
   const handleSelectAllColumns = () => {
-    setSelectedColumnsToKeep(new Set(columns));
-    setCleanOptions((prev) => ({
-      ...prev,
+    const allSelected = new Set(columns);
+    const nextOptions = {
+      ...cleanOptions,
       columns_to_drop: [],
-    }));
+    };
+    pushHistoryState(nextOptions, allSelected);
   };
 
   const handleDeselectAllColumns = () => {
-    setSelectedColumnsToKeep(new Set());
-    setCleanOptions((prev) => ({
-      ...prev,
+    const noneSelected = new Set();
+    const nextOptions = {
+      ...cleanOptions,
       columns_to_drop: columns,
-    }));
+    };
+    pushHistoryState(nextOptions, noneSelected);
+  };
+
+  const handleUndo = () => {
+    if (!canUndo) {
+      return;
+    }
+    const nextIndex = historyIndex - 1;
+    const snapshot = historyStack[nextIndex];
+    if (snapshot) {
+      applySnapshot(snapshot);
+      setHistoryIndex(nextIndex);
+    }
+  };
+
+  const handleRedo = () => {
+    if (!canRedo) {
+      return;
+    }
+    const nextIndex = historyIndex + 1;
+    const snapshot = historyStack[nextIndex];
+    if (snapshot) {
+      applySnapshot(snapshot);
+      setHistoryIndex(nextIndex);
+    }
   };
 
   const handleClean = async () => {
@@ -139,14 +206,27 @@ function DataCleaner({ fileId, onCleanSuccess }) {
 
   const handleDownload = async () => {
     try {
-      const data = await downloadData(cleanResult.cleaned_file_id);
+      const data = await downloadData(cleanResult.cleaned_file_id, downloadFormat);
+
+      let blob;
+      if (data.encoding === 'base64') {
+        const binary = atob(data.content);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: data.mime_type });
+      } else {
+        blob = new Blob([data.content], { type: data.mime_type });
+      }
+
       const element = document.createElement('a');
-      const file = new Blob([data.csv], { type: 'text/csv' });
-      element.href = URL.createObjectURL(file);
-      element.download = `${cleanResult.cleaned_file_id}.csv`;
+      element.href = URL.createObjectURL(blob);
+      element.download = `${cleanResult.cleaned_file_id}.${downloadFormat}`;
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
+      URL.revokeObjectURL(element.href);
     } catch (err) {
       setError('Failed to download file');
     }
@@ -377,10 +457,28 @@ function DataCleaner({ fileId, onCleanSuccess }) {
         <div className="action-summary">
           <span>Selected options: <strong>{selectedOptionCount}</strong></span>
           <span className="active-file">Active file: <strong>{fileId}</strong></span>
+          <span className="history-meta">History: <strong>{historyIndex + 1}</strong> / {historyStack.length}</span>
           {selectedOptionCount === 0 && (
             <span className="summary-hint">Select at least one step to apply cleaning changes.</span>
           )}
         </div>
+        <div className="cleaner-actions">
+          <button
+            className="btn btn-neutral"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            type="button"
+          >
+            Undo
+          </button>
+          <button
+            className="btn btn-neutral"
+            onClick={handleRedo}
+            disabled={!canRedo}
+            type="button"
+          >
+            Redo
+          </button>
         <button
           className="btn btn-primary"
           onClick={handleClean}
@@ -388,6 +486,7 @@ function DataCleaner({ fileId, onCleanSuccess }) {
         >
           {isLoading ? 'Running Cleaning...' : 'Run Cleaning'}
         </button>
+        </div>
       </div>
 
       {cleanResult && (
@@ -412,9 +511,22 @@ function DataCleaner({ fileId, onCleanSuccess }) {
               <strong>{cleanResult.stats.rows}</strong>
             </div>
           </div>
-          <button className="btn btn-secondary" onClick={handleDownload}>
-            Download Cleaned Data
-          </button>
+          <div className="download-actions">
+            <label className="download-format-label" htmlFor="download-format">Format</label>
+            <select
+              id="download-format"
+              className="download-format-select"
+              value={downloadFormat}
+              onChange={(e) => setDownloadFormat(e.target.value)}
+            >
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+              <option value="xlsx">XLSX</option>
+            </select>
+            <button className="btn btn-secondary" onClick={handleDownload}>
+              Download Cleaned Data
+            </button>
+          </div>
 
           {cleanResult && (
             <DataPreview 
