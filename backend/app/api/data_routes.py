@@ -273,9 +273,9 @@ def preview_data(request: Request, file_id: str, rows: int = 5):
     else:
         preview_df = df.head(rows)
     
-    # Aggressively handle NaN/Inf values before JSON serialization
-    preview_df = preview_df.fillna(value=None)  # Replace NaN with None
-    preview_df = preview_df.replace([np.inf, -np.inf], None)  # Replace infinity with None
+    # Replace NaN/Inf in a pandas-safe way before JSON serialization.
+    preview_df = preview_df.replace([np.inf, -np.inf], np.nan)
+    preview_df = preview_df.astype(object).where(pd.notna(preview_df), None)
     
     # Convert to dict and manually ensure all values are JSON-serializable
     preview_dict = preview_df.to_dict(orient='records')

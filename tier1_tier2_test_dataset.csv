@@ -1,0 +1,19 @@
+customer_id,segment,region,monthly_revenue,monthly_cost,orders,refund_rate,satisfaction_score,tenure_months,notes,last_contact_days
+1001,Enterprise,North,12000,8400,120,0.02,92,24,"  Premium account  ",5
+1002,SMB,South,8000,5600,81,0.03,88,18,"Needs follow-up",12
+1003,Enterprise,West,15000,10500,149,0.01,95,36,"High   priority",3
+1004,Mid-Market,East,9500,6900,96,0.04,84,20,"Delayed response  ",17
+1005,SMB,North,6200,4500,63,0.06,79,14,"  Missing docs",30
+1005,SMB,North,6200,4500,63,0.06,79,14,"  Missing docs",30
+1006,Enterprise,South,18000,12750,180,0.02,93,40,"Expansion candidate",4
+1007,Mid-Market,West,11000,7900,108,0.05,82,22," Needs review ",21
+1008,SMB,East,5400,3900,54,0.08,74,11,"",45
+1009,Enterprise,North,21000,14900,210,0.01,96,48,"Executive sponsor engaged",2
+1010,SMB,South,4700,3400,47,0.09,71,9,"Late payment risk",60
+1011,Mid-Market,East,10200,7300,101,0.04,85,19,"  whitespace   cleanup  ",16
+1012,Enterprise,West,16000,11300,158,,91,33,"Awaiting contract",8
+1013,SMB,North,5800,4200,58,0.07,,13,"Null satisfaction",27
+1014,Mid-Market,South,9900,7100,98,0.03,87,,"Missing tenure",10
+1015,Enterprise,East,30000,21500,295,0.01,97,52,"Top performer",1
+1016,SMB,West,4300,3150,42,0.10,69,7," low engagement ",75
+1017,Enterprise,North,85000,60200,820,0.15,55,60,"Extreme outlier account",0
