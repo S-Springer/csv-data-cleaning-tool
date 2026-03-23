@@ -27,14 +27,14 @@
 ## Tier 3 — More Involved
 > Architectural improvements and larger scope changes.
 
-- [ ] **TidyCSV rebrand** — Rename project references across all files:
+- [x] **TidyCSV rebrand** — Rename project references across all files:
   - `frontend/package.json` → `name` field
   - `frontend/src/App.js` → footer text
   - `backend/app/main.py` → FastAPI `title=`
   - `main_win.py` → `webview.create_window()` title
   - `README.md` → H1 heading and all mentions
-- [ ] **Redis caching** — Cache analysis results (`/api/data/analyze`) and AI insights per file hash so repeated requests skip recomputation. Add `redis-py` + `fakeredis` for local dev fallback.
-- [ ] **Async job queue** — Offload long-running cleans and AI calls to a Celery + Redis worker. Return a job ID immediately; poll `/api/jobs/{job_id}` for status. Prevents request timeouts on large files.
+- [x] **Redis caching** — Cache analysis results (`/api/data/analyze`) and AI insights per file hash so repeated requests skip recomputation. Add `redis-py` + `fakeredis` for local dev fallback.
+- [x] **Async job queue** — Offload long-running cleans and AI calls to a Celery + Redis worker. Return a job ID immediately; poll `/api/jobs/{job_id}` for status. Prevents request timeouts on large files.
 
 ---
 

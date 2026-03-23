@@ -6,6 +6,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from app.api.data_routes import router as data_router
 from app.api.auth_routes import router as auth_router
+from app.api.jobs_routes import router as jobs_router
 from app.core.database import engine, Base
 from app.core.rate_limit import limiter
 import numpy as np
@@ -34,6 +35,7 @@ app.add_middleware(
 # Include API routers FIRST (before static files)
 app.include_router(data_router)
 app.include_router(auth_router)
+app.include_router(jobs_router)
 
 
 @app.on_event("startup")

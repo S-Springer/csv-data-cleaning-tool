@@ -1,5 +1,5 @@
 {
-  "name": "csv-cleaning-tool-frontend",
+  "name": "tidycsv-frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

@@ -1,4 +1,4 @@
-# CSV Data Cleaning & Analysis Tool
+# TidyCSV
 
 A full-stack application for Data Engineers and AI Engineers to clean, validate, and analyze CSV data. Simple to start with, scalable as your needs grow.
 
@@ -166,7 +166,7 @@ The application will open at `http://localhost:3000`
 
 ### Option 1: Use Pre-built Executable
 
-Simply download and run `csv-data-tool.exe` - no installation required!
+Simply download and run `tidycsv.exe` - no installation required!
 
 ### Option 2: Build from Source
 
@@ -186,12 +186,12 @@ venv\Scripts\activate  # Windows
 3. Build the executable:
 ```bash
 cd ..
-pyinstaller --noconfirm --onefile --add-data "frontend\build;frontend\build" --add-data "backend\app;app" --name csv-data-tool main_win.py
+pyinstaller --noconfirm --onefile --add-data "frontend\build;frontend\build" --add-data "backend\app;app" --name tidycsv main_win.py
 ```
 
 4. Run the executable:
 ```bash
-.\dist\csv-data-tool.exe
+.\dist\tidycsv.exe
 ```
 
 The application will open in a native window with the full web interface embedded.
