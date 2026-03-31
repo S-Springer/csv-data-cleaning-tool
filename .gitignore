@@ -35,3 +35,7 @@ dist/
 *~
 .DS_Store
 app.db
+
+# Smoke test artifacts
+smoke_export.json
+smoke_export.xlsx
