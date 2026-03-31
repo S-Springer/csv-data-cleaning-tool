@@ -45,7 +45,7 @@ A full-stack application for Data Engineers and AI Engineers to clean, validate,
 - Batch metadata returned (chunk size, chunk count, detected encoding, total rows)
 
 ⬇️ **Export**
-- Download cleaned datasets as CSV
+- Download cleaned datasets as CSV, JSON, or XLSX
 
 🖥️ **Desktop Application**
 - Standalone Windows executable (.exe)
@@ -208,6 +208,7 @@ The application will open in a native window with the full web interface embedde
 - Get comprehensive analysis of uploaded data
 - Returns: basic stats, column stats, quality score, missing values, duplicates
 - Numeric column statistics include: q1, q3, iqr, skewness, kurtosis
+- Response includes `served_from_cache` metadata
 
 ### Batch Upload (Large Files)
 **POST** `/api/data/upload/batch`
@@ -218,6 +219,7 @@ The application will open in a native window with the full web interface embedde
 ### Clean Data
 **POST** `/api/data/clean/{file_id}`
 - Apply cleaning operations to data (executed in logical order)
+- Optional query param: `run_async=true` to submit as background job (returns `job_id`)
 - Request Body:
   - `columns_to_drop` (array): List of column names to remove
   - `fill_missing` (string): Strategy for missing values ('mean', 'median', 'forward_fill', 'empty_string', 'drop')
@@ -231,9 +233,30 @@ The application will open in a native window with the full web interface embedde
 ### AI Insights
 **POST** `/api/data/ai/insights/{file_id}`
 - Generate AI recommendations from dataset profile and quality stats
+- Optional query param: `run_async=true` to submit as background job (returns `job_id`)
 - Request Body:
   - `question` (string, optional): Ask a focused question about the dataset
 - Returns: executive summary, cleaning steps, data quality risks, analysis ideas, next best action
+
+### Advanced Stats
+**GET** `/api/data/stats/{file_id}`
+- Get advanced numeric distribution statistics
+- Returns: per-column percentiles, IQR, skewness, kurtosis, and summary metadata
+- Response includes `served_from_cache` metadata
+
+### Job Status
+**GET** `/api/jobs/{job_id}`
+- Poll background job status for async clean/AI runs
+- Returns: `status` (`pending|running|completed|failed`), `result`, and `error`
+- Failed jobs return normalized error payload: `{"type": "ExceptionClass", "message": "..."}`
+
+### Cache Policy
+- `/api/data/analyze/{file_id}` TTL: `300s`
+- `/api/data/stats/{file_id}` TTL: `300s`
+- `/api/data/ai/insights/{file_id}` TTL: `900s` (keyed by `file_id + question hash`)
+- Invalidation triggers:
+  - File deletion (`DELETE /api/data/files/{file_id}`)
+  - Cleaning completion (`POST /api/data/clean/{file_id}`)
 
 ## AI Configuration
 
@@ -252,8 +275,9 @@ AI_BASE_URL=https://your-provider-base-url/v1
 
 ### Download Data
 **GET** `/api/data/download/{file_id}`
-- Download processed data as CSV
-- Returns: CSV content
+- Download processed data as CSV, JSON, or XLSX
+- Query parameter: `format` (`csv`, `json`, `xlsx`)
+- Returns: encoded content + format metadata
 
 ### File Management
 **GET** `/api/data/files`
@@ -313,11 +337,11 @@ This project is designed to scale:
 - ✅ Data visualization with charts
 
 ### Medium-term (v0.4-v0.5)
-- REST API optimization
-- Caching layer (Redis)
-- Job queue for async processing (Celery)
-- Multiple file format support (Excel, JSON, Parquet)
-- Workflow/pipeline scheduling
+- [ ] REST API optimization
+- [x] Caching layer (Redis) - ✅ Implemented with Redis + fakeredis fallback
+- [x] Async job queue for background processing - ✅ Implemented with `/api/jobs/{job_id}` polling; currently in-process worker
+- [ ] Multiple file format support (Excel, JSON, Parquet) - Excel/JSON complete, Parquet pending
+- [ ] Workflow/pipeline scheduling
 
 ### Long-term (v1.0+)
 - Microservices architecture
@@ -350,16 +374,16 @@ npm test
 
 ## Future Enhancements
 
-- [ ] Database integration for persistent data storage
-- [ ] User authentication and profiles
-- [ ] Advanced statistical analysis
+- [ ] Database integration for persistent data storage (metadata persistence is complete; full dataset persistence is pending)
+- [ ] User authentication and profiles (authentication is complete; profile management is pending)
+- [x] Advanced statistical analysis - ✅ Added advanced stats endpoint and Stats tab (percentiles, IQR, skewness, kurtosis)
 - [x] Data visualization (charts, histograms) - ✅ Basic charts implemented
-- [ ] More chart types (scatter plots, heatmaps)
+- [ ] More chart types (scatter plots, heatmaps) (heatmap is complete; scatter plots are pending)
 - [ ] Workflow automation and scheduling
-- [ ] Support for multiple file formats (Excel, JSON, Parquet)
+- [ ] Support for multiple file formats (Excel, JSON, Parquet) (Excel/JSON are complete; Parquet is pending)
 - [ ] Real-time collaboration features
-- [ ] API rate limiting and security
-- [ ] Undo/redo functionality for cleaning operations
+- [ ] API rate limiting and security (rate limiting is complete; additional security hardening is pending)
+- [x] Undo/redo functionality for cleaning operations - ✅ Implemented in DataCleaner workflow
 
 ## Contributing
 
@@ -379,29 +403,23 @@ For issues or questions, check the code comments or extend with your own feature
 
 ---
 
-**Version**: 0.3.0  
-**Last Updated**: February 19, 2026
+**Version**: 0.4.0  
+**Last Updated**: March 23, 2026
 
-**Recent Updates (v0.3.0)**:
-- ✅ **String cleaning step** - Added text normalization (trim + whitespace cleanup)
-- ✅ **Data standardization/normalization step** - Added z-score and min-max scaling options
-- ✅ **Expanded ordered pipeline** - Cleaning flow now has 6 explicit ordered steps
-- ✅ **UI wording improvements** - Combined scaling terminology in one user-facing step
-- ✅ **Scalability foundations** - Added SQLAlchemy persistence and file metadata tracking
-- ✅ **Authentication MVP** - Added register/login/me endpoints with bearer token auth
-- ✅ **Batch upload MVP** - Added chunked CSV processing endpoint for large files
-- ✅ **Richer statistics** - Added q1, q3, iqr, skewness, kurtosis to numeric analysis
+**Recent Updates (v0.4.0)**:
+- ✅ Multi-format upload now supports CSV, XLSX, and JSON
+- ✅ API rate limiting added for upload, analysis, stats, preview, and AI endpoints
+- ✅ Correlation heatmap visualization added to analysis views
+- ✅ Undo/redo cleaning workflow implemented in `DataCleaner`
+- ✅ Advanced stats endpoint + Stats tab added (`/api/data/stats/{file_id}`)
+- ✅ Multi-format exports added (CSV, JSON, XLSX)
+- ✅ Redis caching layer added with `fakeredis` fallback for local environments
+- ✅ Async background job API added with polling endpoint (`/api/jobs/{job_id}`)
+- ✅ TidyCSV rebrand updates completed across app and docs
 
-**Recent Updates (v0.2.0)**:
-- ✅ **Column dropping feature** - Select which columns to keep in your dataset
-- ✅ **Logical operation ordering** - Cleaning operations now execute in optimal sequence
-- ✅ **Multiple cleaning iterations** - Apply cleaning operations multiple times with unique file IDs
-- ✅ **Data visualizations** - Interactive charts for column distributions and correlations
-- ✅ **Large dataset handling** - Optimized JSON serialization for datasets with 1M+ rows
-- ✅ **UI/UX improvements** - Step-by-step cleaning workflow with clear descriptions
-
-**Previous Updates (v0.1.0)**:
-- ✅ Windows desktop application with PyInstaller
-- ✅ Multi-encoding CSV support (handles international characters)
-- ✅ Fixed API routing for packaged application
-- ✅ Dynamic API URL resolution for dev/production
+**Previous Updates (v0.3.0 and earlier)**:
+- ✅ Ordered cleaning pipeline and improved UX flow
+- ✅ SQLAlchemy metadata persistence foundation
+- ✅ Authentication MVP (`register`, `login`, `me`)
+- ✅ Batch upload support for large CSV files
+- ✅ Desktop packaging via PyInstaller

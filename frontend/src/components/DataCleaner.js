@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cleanData, downloadData, previewData } from '../services/api';
+import useJobPolling from '../hooks/useJobPolling';
 import DataPreview from './DataPreview';
 import './DataCleaner.css';
 
@@ -13,7 +14,7 @@ const INITIAL_CLEAN_OPTIONS = {
 };
 
 function DataCleaner({ fileId, onCleanSuccess }) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [activeStep, setActiveStep] = useState(1);
   const [columns, setColumns] = useState([]);
@@ -21,9 +22,22 @@ function DataCleaner({ fileId, onCleanSuccess }) {
   const [cleanOptions, setCleanOptions] = useState(INITIAL_CLEAN_OPTIONS);
   const [cleanResult, setCleanResult] = useState(null);
   const [downloadFormat, setDownloadFormat] = useState('csv');
+  const [runInBackground, setRunInBackground] = useState(false);
   const [historyStack, setHistoryStack] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const historyIndexRef = useRef(-1);
+  const { jobState, isPolling, resetJob, startPolling } = useJobPolling({
+    onCompleted: (result) => {
+      setError(null);
+      setCleanResult(result);
+      if (result?.cleaned_file_id) {
+        onCleanSuccess(result.cleaned_file_id);
+      }
+    },
+    onFailed: (message) => {
+      setError(message || 'Cleaning job failed');
+    },
+  });
 
   useEffect(() => {
     historyIndexRef.current = historyIndex;
@@ -76,10 +90,13 @@ function DataCleaner({ fileId, onCleanSuccess }) {
   useEffect(() => {
     setActiveStep(1);
     setCleanResult(null);
-  }, [fileId]);
+    setError(null);
+    resetJob();
+  }, [fileId, resetJob]);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex >= 0 && historyIndex < historyStack.length - 1;
+  const isProcessing = isSubmitting || isPolling;
 
   const selectedOptionCount = [
     cleanOptions.columns_to_drop.length > 0,
@@ -190,19 +207,38 @@ function DataCleaner({ fileId, onCleanSuccess }) {
   };
 
   const handleClean = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     setError(null);
+    setCleanResult(null);
+    resetJob();
 
     try {
-      const result = await cleanData(fileId, cleanOptions);
+      const result = await cleanData(fileId, cleanOptions, { runAsync: runInBackground });
+
+      if (runInBackground && result.job_id) {
+        startPolling(result.job_id);
+        return;
+      }
+
       setCleanResult(result);
       onCleanSuccess(result.cleaned_file_id);
     } catch (err) {
-      setError(err.message || 'Failed to clean data');
+      const message = err?.response?.data?.detail || err.message || 'Failed to clean data';
+      setError(message);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  const jobStatusLabel = jobState.status === 'completed'
+    ? 'Completed'
+    : jobState.status === 'failed'
+      ? 'Failed'
+      : jobState.status === 'running'
+        ? 'Running'
+        : jobState.status === 'pending'
+          ? 'Pending'
+          : 'Idle';
 
   const handleDownload = async () => {
     try {
@@ -251,6 +287,27 @@ function DataCleaner({ fileId, onCleanSuccess }) {
           <span className="summary-card-label">Target File</span>
           <span className="summary-card-value summary-file" title={fileId}>{fileId}</span>
         </div>
+      </div>
+
+      <div className="async-mode-card">
+        <label className="async-mode-toggle">
+          <input
+            type="checkbox"
+            checked={runInBackground}
+            onChange={(event) => setRunInBackground(event.target.checked)}
+            disabled={isProcessing}
+          />
+          <span>Run cleaning in background</span>
+        </label>
+        <p className="async-mode-help">
+          Submit long-running cleaning jobs and keep the result panel updated automatically while polling.
+        </p>
+        {jobState.jobId && (
+          <div className={`job-status-panel status-${jobState.status}`} role="status" aria-live="polite">
+            <span className={`job-status-pill status-${jobState.status}`}>{jobStatusLabel}</span>
+            <span className="job-status-text">Job {jobState.jobId.slice(0, 8)} is {jobStatusLabel.toLowerCase()}.</span>
+          </div>
+        )}
       </div>
 
       <div className="cleaning-options">
@@ -482,9 +539,9 @@ function DataCleaner({ fileId, onCleanSuccess }) {
         <button
           className="btn btn-primary"
           onClick={handleClean}
-          disabled={isLoading}
+          disabled={isProcessing}
         >
-          {isLoading ? 'Running Cleaning...' : 'Run Cleaning'}
+          {isSubmitting ? 'Submitting...' : isPolling ? 'Background Job Running...' : 'Run Cleaning'}
         </button>
         </div>
       </div>
@@ -493,6 +550,7 @@ function DataCleaner({ fileId, onCleanSuccess }) {
         <div className="cleaning-result" role="status" aria-live="polite">
           <h4>✓ Cleaning Complete</h4>
           <div className="status-chip success-chip">Last run succeeded</div>
+          {jobState.jobId && <div className="job-meta">Background job: {jobState.jobId}</div>}
           <div className="result-stats">
             <div className="result-item">
               <span>Operations Applied:</span>

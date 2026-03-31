@@ -1,64 +1,98 @@
-# TidyCSV — Development Roadmap
+# TidyCSV — Implementation Roadmap
 
-> Last updated: 2026-03-17  
-> Current version: v0.3.1  
-> Branch: `main` | Commit: `9cde012`
-
----
-
-## Tier 1 — Quick Wins
-> Low effort, high value. Implement these first.
-
-- [x] **Multi-format upload** — Accept `.xlsx` and `.json` alongside `.csv`. `pandas.read_excel()` and `pandas.read_json()` handle parsing; update the file-type validation in `data_routes.py` and the upload hint text in `FileUpload.js`.
-- [x] **API rate limiting** — Add `slowapi` middleware to FastAPI to prevent abuse on upload and AI endpoints. Minimal config change in `main.py`.
-- [x] **Correlation heatmap** — Backend computes `df.corr()` and returns the matrix; frontend renders it as a colour-coded table (or uses Recharts `Cell`). Add to the Visualizations tab in `DataAnalysis.js`.
+> Last updated: 2026-03-23  
+> Current status: Tier 1-3 implemented and smoke-tested  
+> Branch: `main`
 
 ---
 
-## Tier 2 — Medium Effort
-> Meaningful UX improvements that need a bit more design thought.
+## 0. Review Gate (Do This First)
+> Align docs and architecture notes before writing new feature code.
 
-- [x] **Undo / redo cleaning operations** — Track applied cleaning steps in a history stack (frontend state or lightweight backend session store). Let users roll back individual steps before downloading.
-- [x] **Advanced stats panel** — Expose box-plot stats (min, Q1, median, Q3, max, IQR), percentile breakdowns, and skewness/kurtosis per column. Add a new "Stats" tab in `DataAnalysis.js` backed by a `/api/data/stats/{file_id}` endpoint.
-- [x] **Export formats** — Let users download cleaned data as `.xlsx` or `.json` in addition to `.csv`. Use `pandas.to_excel()` / `pandas.to_json()` in `cleaner.py` and add format selector to the download button.
-
----
-
-## Tier 3 — More Involved
-> Architectural improvements and larger scope changes.
-
-- [x] **TidyCSV rebrand** — Rename project references across all files:
-  - `frontend/package.json` → `name` field
-  - `frontend/src/App.js` → footer text
-  - `backend/app/main.py` → FastAPI `title=`
-  - `main_win.py` → `webview.create_window()` title
-  - `README.md` → H1 heading and all mentions
-- [x] **Redis caching** — Cache analysis results (`/api/data/analyze`) and AI insights per file hash so repeated requests skip recomputation. Add `redis-py` + `fakeredis` for local dev fallback.
-- [x] **Async job queue** — Offload long-running cleans and AI calls to a Celery + Redis worker. Return a job ID immediately; poll `/api/jobs/{job_id}` for status. Prevents request timeouts on large files.
+- [x] Confirm async architecture direction:
+  - Current implementation uses in-process threaded jobs (`/api/jobs/{job_id}` polling).
+  - Original roadmap language says "Celery + Redis worker".
+  - Decide one path now:
+    - Keep in-process worker for desktop/local simplicity, or
+    - Move to full Celery worker for production-scale queueing.
+- [x] Refresh product/docs source of truth:
+  - Update `README.md` version/date and "Recent Updates" to include Tier 1-3 work.
+  - Remove stale "future enhancements" items already implemented (rate limiting, undo/redo, multi-format support, heatmap basics).
+  - Add new endpoints to docs: `/api/data/stats/{file_id}`, `/api/jobs/{job_id}`, async query param behavior.
 
 ---
 
-## Backlog / Future Enhancements
+## 1. Stabilization Sprint (Highest Priority)
+> Convert implemented features into production-reliable behavior.
 
-- [ ] Scatter plot matrix for pairwise numeric column relationships
-- [ ] Real-time collaboration (shared session via WebSockets)
-- [ ] User authentication UI (register / login flow wired to existing JWT backend)
-- [ ] Cloud deployment guide (Docker Compose + Fly.io or Railway)
-- [ ] ML-based data quality detection (detect label leakage, duplicate near-matches, implicit nulls)
-- [ ] Scheduled / batch file processing via API key
-- [ ] Dark mode toggle
+- [x] Add backend tests for Tier 3:
+  - Cache hit/miss tests for `/analyze` and `/stats`.
+  - Async job flow tests for clean and AI (`pending -> running -> completed/failed`).
+  - Job 404 test for unknown `job_id`.
+- [x] Add regression tests for known bug fixes:
+  - Preview endpoint NaN/Inf serialization guard.
+  - Multiple repeated preview calls under rate limits.
+- [x] Add lightweight observability:
+  - Structured logs for cache usage (`hit`, `miss`, `fallback`).
+  - Structured logs for job lifecycle (`submitted`, `started`, `completed`, `failed`).
+  - Add response metadata field (optional) like `served_from_cache` where helpful.
+- [x] Define cache invalidation policy explicitly:
+  - Invalidate on `clean` completion and file delete.
+  - Document per-endpoint TTL values.
+- [x] Harden error responses:
+  - Normalize error payload schema for job failures.
+  - Ensure AI errors in async mode surface actionable messages.
 
 ---
 
-## Completed
+## 2. UX Completeness Sprint
+> Expose new backend capabilities cleanly in UI.
 
-- [x] FastAPI backend with SQLAlchemy + SQLite
-- [x] JWT authentication (register / login / `/me`)
-- [x] CSV upload, preview, analysis, and cleaning endpoints
-- [x] OpenAI-compatible AI insights endpoint (`POST /api/data/ai/insights/{file_id}`)
-- [x] React 18 frontend with accordion-step DataCleaner
-- [x] AIAssistant component with structured insight display
-- [x] DataAnalysis tabs (Overview, Visualizations, Quality, Issues)
-- [x] Consistent UX polish across all panels (empty states, loading states, action labels)
-- [x] PyInstaller desktop EXE with all dependencies bundled
-- [x] Git history clean, pushed to `main` on GitHub
+- [x] Add async mode controls in frontend:
+  - Optional "Run in background" toggle on cleaning and AI actions.
+  - Show job status pill (`pending`, `running`, `completed`, `failed`).
+  - Poll `/api/jobs/{job_id}` and render terminal result in place.
+- [x] Improve analysis experience:
+  - Add scatter plot matrix for numeric columns.
+  - Add quick filters (column picker, top-N categories) for visualizations.
+- [x] Add auth UI flow:
+  - Register/login/logout controls.
+  - Store token securely and attach bearer token in API client.
+  - Add per-user file listing UX.
+
+---
+
+## 3. Platform Sprint (Scale + Deploy)
+> Prepare for reproducible environments and cloud-hosted use.
+
+- [ ] Add containerized local stack:
+  - `docker-compose.yml` with `backend`, `frontend`, `redis`.
+  - Environment-variable driven configuration for API URLs and Redis host.
+- [ ] Deployment guide:
+  - One simple target first (Railway or Fly.io).
+  - Include build commands, env vars, health check endpoints, and rollback steps.
+- [ ] Introduce queue implementation choice from Section 0:
+  - If keeping threaded queue: document limits and concurrency constraints.
+  - If migrating to Celery: add worker process config and retry policy.
+
+---
+
+## 4. Data Intelligence Sprint
+> Add higher-level quality automation after platform is stable.
+
+- [ ] ML-assisted quality detection:
+  - Detect implicit nulls and schema anomalies.
+  - Add near-duplicate / fuzzy duplicate heuristics.
+  - Add suspicious outlier explanations in plain language.
+- [ ] Scheduled processing/API key workflows:
+  - API key management endpoints.
+  - Scheduled or batch processing endpoints with status tracking.
+
+---
+
+## Completed Milestones
+
+- [x] Tier 1: Multi-format upload, API rate limiting, correlation heatmap
+- [x] Tier 2: Undo/redo, advanced stats endpoint + panel, multi-format export
+- [x] Tier 3: Rebrand, caching layer (`redis` + `fakeredis` fallback), async job API
+- [x] Smoke validation: Tier 1/2 full pass; Tier 3 endpoint checks added

@@ -8,6 +8,7 @@ import io
 import base64
 import hashlib
 import threading
+import logging
 from typing import Optional, Any, Dict, List
 from sqlalchemy.orm import Session
 from app.core.rate_limit import limiter
@@ -21,6 +22,11 @@ from app.core.security import get_optional_user
 from app.models import FileRecord, User
 
 router = APIRouter(prefix="/api/data", tags=["data"])
+logger = logging.getLogger(__name__)
+
+ANALYZE_CACHE_TTL = 300
+STATS_CACHE_TTL = 300
+AI_CACHE_TTL = 900
 
 # Lock to make clean_counter increments thread-safe for async jobs.
 _clean_counter_lock = threading.Lock()
@@ -187,6 +193,10 @@ def _do_clean(file_id: str, request: CleanDataRequest, owner_id: Optional[int]) 
             parent_file_id=file_id,
         )
 
+        # Source-file analysis/AI caches become stale after generating a new cleaned variant.
+        invalidate_file_cache(file_id)
+        logger.info("cache_invalidate file_id=%s reason=clean_completed", file_id)
+
         return {
             "original_file_id": file_id,
             "cleaned_file_id": cleaned_id,
@@ -220,7 +230,7 @@ def _do_ai_insights(file_id: str, question: Optional[str]) -> dict:
         question=question,
     )
     result = convert_numpy_types(result)
-    set_cached(cache_key, result, ttl=900)
+    set_cached(cache_key, result, ttl=AI_CACHE_TTL)
     return result
 
 
@@ -411,7 +421,13 @@ def analyze_data(request: Request, file_id: str):
     cache_key = f"tidycsv:{file_id}:analyze"
     cached = get_cached(cache_key)
     if cached is not None:
+        logger.info("cache_hit endpoint=analyze file_id=%s", file_id)
+        if isinstance(cached, dict):
+            cached = dict(cached)
+            cached["served_from_cache"] = True
         return cached
+
+    logger.info("cache_miss endpoint=analyze file_id=%s", file_id)
 
     df = uploaded_data[file_id]
 
@@ -426,7 +442,8 @@ def analyze_data(request: Request, file_id: str):
     }
 
     result = convert_numpy_types(response)
-    set_cached(cache_key, result, ttl=300)
+    result["served_from_cache"] = False
+    set_cached(cache_key, result, ttl=ANALYZE_CACHE_TTL)
     return result
 
 
@@ -440,7 +457,13 @@ def get_advanced_stats(request: Request, file_id: str):
     cache_key = f"tidycsv:{file_id}:stats"
     cached = get_cached(cache_key)
     if cached is not None:
+        logger.info("cache_hit endpoint=stats file_id=%s", file_id)
+        if isinstance(cached, dict):
+            cached = dict(cached)
+            cached["served_from_cache"] = True
         return cached
+
+    logger.info("cache_miss endpoint=stats file_id=%s", file_id)
 
     df = uploaded_data[file_id]
     response = {
@@ -448,7 +471,8 @@ def get_advanced_stats(request: Request, file_id: str):
         "advanced_stats": DataAnalyzer.get_advanced_stats(df),
     }
     result = convert_numpy_types(response)
-    set_cached(cache_key, result, ttl=300)
+    result["served_from_cache"] = False
+    set_cached(cache_key, result, ttl=STATS_CACHE_TTL)
     return result
 
 
@@ -460,6 +484,7 @@ def generate_ai_insights(request: Request, file_id: str, payload: AIInsightReque
         raise HTTPException(status_code=404, detail="File not found")
 
     if run_async:
+        logger.info("job_submitted type=ai_insights file_id=%s", file_id)
         job_id = jobs.submit(_do_ai_insights, file_id, payload.question)
         return {"job_id": job_id, "status": "pending", "message": "AI insights job submitted"}
 
@@ -467,9 +492,16 @@ def generate_ai_insights(request: Request, file_id: str, payload: AIInsightReque
     cache_key = f"tidycsv:{file_id}:ai:{question_hash}"
     cached = get_cached(cache_key)
     if cached is not None:
+        logger.info("cache_hit endpoint=ai_insights file_id=%s", file_id)
+        if isinstance(cached, dict):
+            cached = dict(cached)
+            cached["served_from_cache"] = True
         return cached
 
+    logger.info("cache_miss endpoint=ai_insights file_id=%s", file_id)
+
     result = _do_ai_insights(file_id, payload.question)
+    result["served_from_cache"] = False
     return result
 
 
@@ -491,6 +523,7 @@ def clean_data(
 
     if run_async:
         owner_id = current_user.id if current_user else None
+        logger.info("job_submitted type=clean file_id=%s", file_id)
         job_id = jobs.submit(_do_clean, file_id, request, owner_id)
         return {"job_id": job_id, "status": "pending", "message": "Cleaning job submitted"}
 

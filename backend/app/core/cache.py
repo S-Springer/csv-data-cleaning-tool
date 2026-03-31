@@ -48,9 +48,12 @@ def get_cached(key: str) -> Optional[Any]:
     try:
         raw = _get_client().get(key)
         if raw is None:
+            logger.debug("cache_miss key=%s", key)
             return None
+        logger.debug("cache_hit key=%s", key)
         return json.loads(raw)
     except Exception:
+        logger.exception("cache_get_error key=%s", key)
         return None
 
 
@@ -58,7 +61,9 @@ def set_cached(key: str, value: Any, ttl: int = 300) -> None:
     """Serialise *value* to JSON and store it under *key* with a TTL (seconds)."""
     try:
         _get_client().setex(key, ttl, json.dumps(value))
+        logger.debug("cache_set key=%s ttl=%s", key, ttl)
     except Exception:
+        logger.exception("cache_set_error key=%s", key)
         pass
 
 
@@ -69,5 +74,7 @@ def invalidate_file_cache(file_id: str) -> None:
         keys = client.keys(f"tidycsv:{file_id}:*")
         if keys:
             client.delete(*keys)
+            logger.info("cache_invalidate file_id=%s entries=%s", file_id, len(keys))
     except Exception:
+        logger.exception("cache_invalidate_error file_id=%s", file_id)
         pass

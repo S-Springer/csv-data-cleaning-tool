@@ -1,31 +1,62 @@
 import React, { useState } from 'react';
 import { generateAIInsights } from '../services/api';
+import useJobPolling from '../hooks/useJobPolling';
 import './AIAssistant.css';
 
 function AIAssistant({ fileId }) {
   const [question, setQuestion] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [generatedAt, setGeneratedAt] = useState(null);
+  const [runInBackground, setRunInBackground] = useState(false);
+  const { jobState, isPolling, resetJob, startPolling } = useJobPolling({
+    onCompleted: (nextResult) => {
+      setError(null);
+      setResult(nextResult);
+      setGeneratedAt(new Date());
+    },
+    onFailed: (message) => {
+      setError(message || 'AI insights job failed');
+    },
+  });
+
+  const isLoading = isSubmitting || isPolling;
 
   const handleGenerate = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     setError(null);
+    setResult(null);
+    resetJob();
 
     try {
-      const data = await generateAIInsights(fileId, question);
+      const data = await generateAIInsights(fileId, question, { runAsync: runInBackground });
+
+      if (runInBackground && data.job_id) {
+        startPolling(data.job_id);
+        return;
+      }
+
       setResult(data);
       setGeneratedAt(new Date());
     } catch (err) {
       const message = err?.response?.data?.detail || err.message || 'Failed to generate AI insights';
       setError(message);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const insights = result?.insights || {};
+  const jobStatusLabel = jobState.status === 'completed'
+    ? 'Completed'
+    : jobState.status === 'failed'
+      ? 'Failed'
+      : jobState.status === 'running'
+        ? 'Running'
+        : jobState.status === 'pending'
+          ? 'Pending'
+          : 'Idle';
 
   return (
     <div className="ai-assistant">
@@ -43,10 +74,26 @@ function AIAssistant({ fileId }) {
 
       <div className="ai-action-row">
         <button className="btn btn-primary" onClick={handleGenerate} disabled={isLoading || !fileId}>
-          {isLoading ? 'Generating Insights...' : 'Generate Insights'}
+          {isSubmitting ? 'Submitting...' : isPolling ? 'Background Job Running...' : 'Generate Insights'}
         </button>
+        <label className="ai-background-toggle">
+          <input
+            type="checkbox"
+            checked={runInBackground}
+            onChange={(event) => setRunInBackground(event.target.checked)}
+            disabled={isLoading}
+          />
+          <span>Run in background</span>
+        </label>
         {!isLoading && result && <span className="ai-status-chip" role="status" aria-live="polite">Insights ready</span>}
       </div>
+
+      {jobState.jobId && (
+        <div className={`ai-job-status status-${jobState.status}`} role="status" aria-live="polite">
+          <span className={`ai-job-pill status-${jobState.status}`}>{jobStatusLabel}</span>
+          <span>Job {jobState.jobId.slice(0, 8)} is {jobStatusLabel.toLowerCase()}.</span>
+        </div>
+      )}
 
       {!result && !error && (
         <div className="ai-empty-state">
@@ -94,6 +141,7 @@ function AIAssistant({ fileId }) {
           </div>
 
           <div className="ai-meta">Model: {result.model}</div>
+          {jobState.jobId && <div className="ai-meta">Background job: {jobState.jobId}</div>}
           {generatedAt && (
             <div className="ai-meta">Generated: {generatedAt.toLocaleTimeString()}</div>
           )}

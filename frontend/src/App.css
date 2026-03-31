@@ -134,6 +134,224 @@ textarea:focus-visible,
   padding: 20px;
 }
 
+.auth-panel {
+  margin-bottom: 18px;
+}
+
+.auth-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.auth-panel-header h2 {
+  font-size: 20px;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.auth-panel-header p {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.auth-user-badge {
+  background: #edf5ff;
+  border: 1px solid #cfe0fb;
+  color: #274f93;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-mode-toggle {
+  display: inline-flex;
+  background: #f1f5fb;
+  padding: 4px;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.auth-mode-btn {
+  border: none;
+  background: transparent;
+  color: #4f5d75;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-mode-btn.active {
+  background: #ffffff;
+  color: #2f3b52;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.auth-fields {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) auto;
+  gap: 10px;
+}
+
+.auth-fields input {
+  border: 1px solid #d2dced;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.auth-submit,
+.logout-btn,
+.refresh-files-btn,
+.tracked-file-item button {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.auth-submit {
+  background: #2f80ed;
+  color: #ffffff;
+  padding: 10px 16px;
+}
+
+.auth-submit:hover,
+.logout-btn:hover,
+.refresh-files-btn:hover,
+.tracked-file-item button:hover {
+  transform: translateY(-1px);
+}
+
+.auth-submit:disabled,
+.refresh-files-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+  transform: none;
+}
+
+.auth-error,
+.tracked-files-error {
+  color: #c0392b;
+  background: #fdecec;
+  border: 1px solid #f5c8c3;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.logout-btn {
+  background: #e74c3c;
+  color: #ffffff;
+  padding: 9px 14px;
+}
+
+.logout-btn:hover {
+  background: #c0392b;
+}
+
+.tracked-files-card {
+  margin-bottom: 18px;
+}
+
+.tracked-files-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.tracked-files-header h3 {
+  color: #2c3e50;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.tracked-files-header p {
+  color: #7f8c8d;
+  font-size: 13px;
+}
+
+.refresh-files-btn {
+  background: #eef3fb;
+  color: #2f3b52;
+  border: 1px solid #d4dff0;
+  padding: 8px 12px;
+}
+
+.tracked-files-empty {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.tracked-files-list {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.tracked-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e2eaf6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fbfdff;
+}
+
+.tracked-file-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tracked-file-main strong {
+  font-size: 14px;
+  color: #2f3b52;
+}
+
+.tracked-file-main span,
+.tracked-file-main small {
+  color: #5c6b80;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tracked-file-item button {
+  background: #3498db;
+  color: #ffffff;
+  padding: 8px 12px;
+}
+
+.tracked-file-item button:hover {
+  background: #2d86c2;
+}
+
 .section-header {
   margin-bottom: 14px;
 }
@@ -357,6 +575,10 @@ textarea:focus-visible,
   .sidebar-item {
     min-width: 180px;
   }
+
+  .auth-fields {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -383,6 +605,15 @@ textarea:focus-visible,
   .file-info {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .auth-panel-header,
+  .tracked-files-header {
+    flex-direction: column;
+  }
+
+  .auth-actions {
+    justify-content: flex-start;
   }
 
   .workspace-nav {
