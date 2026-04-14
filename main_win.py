@@ -2,6 +2,8 @@ import sys
 import os
 import threading
 import time
+import urllib.request
+import urllib.error
 from pathlib import Path
 import uvicorn
 # Import FastAPI and other backend dependencies so PyInstaller detects them
@@ -40,8 +42,17 @@ def start_server():
 if __name__ == '__main__':
     t = threading.Thread(target=start_server, daemon=True)
     t.start()
-    # wait for server to start
-    time.sleep(1.0)
+
+    # Poll the health endpoint until the server is ready (up to 30 seconds)
+    for _ in range(60):
+        try:
+            urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=1)
+            break
+        except (urllib.error.URLError, OSError):
+            time.sleep(0.5)
+    else:
+        # Server never came up — still try opening so the user sees an error
+        pass
 
     try:
         import webview

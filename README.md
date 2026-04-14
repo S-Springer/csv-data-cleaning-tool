@@ -1,425 +1,190 @@
 # TidyCSV
 
-A full-stack application for Data Engineers and AI Engineers to clean, validate, and analyze CSV data. Simple to start with, scalable as your needs grow.
+Clean, analyze, and export CSV data with a FastAPI backend, React frontend, and optional Windows desktop wrapper.
 
-## Features
+Last updated: 2026-04-14
 
-✨ **Data Upload**
-- Drag-and-drop CSV file upload
-- Automatic data parsing and basic statistics
-- **Multi-encoding support** (UTF-8, Latin-1, ISO-8859-1, CP1252, UTF-16)
+## What It Does
 
-📊 **Data Analysis**
-- Dataset overview (rows, columns, memory usage)
-- Column-level statistics
-- Data quality scoring (completeness & uniqueness)
-- Missing values detection
-- Duplicate row detection
-- Interactive visualizations (column distributions, correlations)
+- Upload CSV files (single or chunked for large files)
+- Analyze data quality, statistics, and column distributions
+- Clean data with ordered operations (missing values, strings, scaling, duplicates, outliers)
+- Run clean/AI tasks in background jobs with status polling
+- Visualize data with histograms, correlations, and scatter matrix tools
+- Export processed datasets as CSV, JSON, or XLSX
+- Optional auth flow (register/login/logout) with per-user file listings
 
-🧹 **Data Cleaning**
-- **Logical operation order**: Optimized workflow for efficient cleaning
-  1. **Drop Columns** - Select which columns to keep
-  2. **Fill Missing Values** - Handle NaN values (mean, median, forward fill, empty string, or drop)
-  3. **Clean String Values** - Trim extra spaces and normalize whitespace in text columns
-  4. **Data Standardization & Normalization** - Choose one numeric scaling method (z-score or min-max)
-  5. **Remove Duplicates** - Remove duplicate rows
-  6. **Remove Outliers** - Optional IQR-based outlier removal
-- Multiple cleaning iterations supported
-- Real-time preview updates after each operation
-- Real-time quality score updates
+## Stack
 
-🔐 **Authentication & File Management (MVP)**
-- User registration and login with bearer token auth
-- Optional authenticated workflow (existing anonymous workflow still supported)
-- Persistent file metadata tracking (owner, lineage, creation time)
-- File listing and deletion endpoints
+- Backend: FastAPI, Pandas, NumPy, SQLAlchemy, Redis/fakeredis fallback
+- Frontend: React 18, Axios, Recharts
+- Desktop: PyInstaller wrapper around the web app
 
-🤖 **AI Assistant (MVP)**
-- AI-powered dataset insights and cleaning recommendations
-- Optional user question prompt for targeted guidance
-- Endpoint supports OpenAI-compatible APIs via environment variables
+## Quick Start
 
-⚡ **Large-File Batch Processing (MVP)**
-- Chunk-based CSV upload endpoint for large files
-- Batch metadata returned (chunk size, chunk count, detected encoding, total rows)
+### 1) Backend
 
-⬇️ **Export**
-- Download cleaned datasets as CSV, JSON, or XLSX
-
-🖥️ **Desktop Application**
-- Standalone Windows executable (.exe)
-- No installation required
-- Built-in web UI with native window
-- All features available offline
-
-## Tech Stack
-
-### Backend
-- **Python 3.9+**
-- **FastAPI** - Modern web framework
-- **Pandas** - Data manipulation and analysis
-- **NumPy** - Numerical computing
-
-### Frontend
-- **React 18** - UI framework
-- **Recharts** - Data visualization library
-- **Axios** - HTTP client
-- **CSS3** - Styling
-
-## Project Structure
-
-```
-test_application/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   └── data_routes.py       # API endpoints
-│   │   ├── services/
-│   │   │   ├── cleaner.py           # Data cleaning logic
-│   │   │   └── analyzer.py          # Data analysis logic
-│   │   └── main.py                  # FastAPI app initialization
-│   ├── requirements.txt              # Python dependencies
-│   └── .gitignore
-├── frontend/
-│   ├── public/
-│   │   └── index.html
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── FileUpload.js        # File upload component
-│   │   │   ├── DataAnalysis.js      # Analysis display component
-│   │   │   └── DataCleaner.js       # Cleaning interface component
-│   │   ├── services/
-│   │   │   └── api.js               # API client
-│   │   ├── App.js                   # Main app component
-│   │   ├── App.css                  # App styling
-│   │   └── index.js                 # React entry point
-│   ├── package.json
-│   └── .gitignore
-├── main_win.py                       # Desktop app entry point
-├── .gitignore
-└── README.md
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.9 or higher
-- Node.js 16 or higher
-- npm or yarn
-
-### Backend Setup
-
-1. Navigate to the backend directory:
 ```bash
 cd backend
-```
-
-2. Create a virtual environment:
-```bash
 python -m venv venv
-```
-
-3. Activate the virtual environment:
-```bash
 # Windows
 venv\Scripts\activate
-
 # macOS/Linux
 source venv/bin/activate
-```
-
-4. Install dependencies:
-```bash
 pip install -r requirements.txt
-```
-
-5. Start the FastAPI server:
-```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The API will be available at `http://localhost:8000`
-- Interactive API docs: `http://localhost:8000/docs`
+Backend URLs:
 
-### Frontend Setup
+- API: http://localhost:8000
+- Swagger docs: http://localhost:8000/docs
 
-1. Navigate to the frontend directory:
+### 2) Frontend
+
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
-
-3. Start the development server:
-```bash
 npm start
 ```
 
-The application will open at `http://localhost:3000`
+Frontend URL:
 
-## Desktop Application (Windows)
+- App: http://localhost:3000
 
-### Option 1: Use Pre-built Executable
+## Core Endpoints
 
-Simply download and run `tidycsv.exe` - no installation required!
+### Data
 
-### Option 2: Build from Source
+- `POST /api/data/upload`
+- `POST /api/data/upload/batch`
+- `GET /api/data/analyze/{file_id}`
+- `GET /api/data/stats/{file_id}`
+- `POST /api/data/clean/{file_id}`
+- `GET /api/data/preview/{file_id}`
+- `GET /api/data/download/{file_id}?format=csv|json|xlsx`
+- `GET /api/data/files`
+- `DELETE /api/data/files/{file_id}`
 
-1. Build the frontend:
+### AI + Async Jobs
+
+- `POST /api/data/ai/insights/{file_id}`
+- `GET /api/jobs/{job_id}`
+
+Both clean and AI endpoints support async mode via `?run_async=true`.
+
+### Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+## Frontend Capabilities
+
+- Background job toggle and status polling in UI
+- Auth session persistence and token-attached API calls
+- Visualization controls:
+  - Numeric/categorical column filters
+  - Top-N category selection
+  - Scatter plot matrix for selected numeric columns
+
+## Smoke Tests
+
+From project root:
+
+```bash
+python smoke_test_tier1_tier2.py
+python smoke_test_tier3.py
+```
+
+These scripts validate end-to-end upload, analysis, cleaning, export, caching, and async-job behavior.
+
+## Desktop Build (Windows)
+
 ```bash
 cd frontend
 npm install
 npm run build
-```
 
-2. Activate the backend virtual environment:
-```bash
-cd ../backend
-venv\Scripts\activate  # Windows
-```
-
-3. Build the executable:
-```bash
 cd ..
 pyinstaller --noconfirm --onefile --add-data "frontend\build;frontend\build" --add-data "backend\app;app" --name tidycsv main_win.py
 ```
 
-4. Run the executable:
-```bash
-.\dist\tidycsv.exe
+Built executable is placed in `dist/`.
+
+## Windows Installer Build (.exe installer)
+
+This project includes an Inno Setup installer script so testers can install/uninstall via a standard setup wizard.
+
+Prerequisites:
+
+- Python 3.11 or 3.12 (3.14 is not supported by pinned `pandas==2.1.3`)
+- Node.js + npm
+- Inno Setup 6 (`ISCC.exe`)
+
+One-command build from repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-installer.ps1 -PythonExe backend\.conda-py312\python.exe -Version 0.1.0
 ```
 
-The application will open in a native window with the full web interface embedded.
+Run that command from the repository root. If you are already in the repo root, keep the script path as `./scripts/build-windows-installer.ps1`.
 
-## API Endpoints
+Recommended long-term local setup:
 
-### Upload File
-**POST** `/api/data/upload`
-- Upload a CSV file for processing
-- Returns: file_id, basic statistics
-
-### Analyze Data
-**GET** `/api/data/analyze/{file_id}`
-- Get comprehensive analysis of uploaded data
-- Returns: basic stats, column stats, quality score, missing values, duplicates
-- Numeric column statistics include: q1, q3, iqr, skewness, kurtosis
-- Response includes `served_from_cache` metadata
-
-### Batch Upload (Large Files)
-**POST** `/api/data/upload/batch`
-- Upload and process CSV in chunks for large-file workflows
-- Query parameter: `chunk_size` (default `100000`)
-- Returns: file_id, batch metadata, basic stats
-
-### Clean Data
-**POST** `/api/data/clean/{file_id}`
-- Apply cleaning operations to data (executed in logical order)
-- Optional query param: `run_async=true` to submit as background job (returns `job_id`)
-- Request Body:
-  - `columns_to_drop` (array): List of column names to remove
-  - `fill_missing` (string): Strategy for missing values ('mean', 'median', 'forward_fill', 'empty_string', 'drop')
-  - `clean_strings` (bool): Trim and normalize whitespace in string/text columns
-  - `standardize_data` (string): Numeric scaling method ('zscore' or 'minmax')
-  - `remove_duplicates` (bool): Remove duplicate rows
-  - `remove_outliers` (bool): Remove statistical outliers
-- Operations are applied in sequence: columns → missing → strings → scaling → duplicates → outliers
-- Returns: Cleaned dataset info with new file_id (e.g., `{file_id}_cleaned_1`)
-
-### AI Insights
-**POST** `/api/data/ai/insights/{file_id}`
-- Generate AI recommendations from dataset profile and quality stats
-- Optional query param: `run_async=true` to submit as background job (returns `job_id`)
-- Request Body:
-  - `question` (string, optional): Ask a focused question about the dataset
-- Returns: executive summary, cleaning steps, data quality risks, analysis ideas, next best action
-
-### Advanced Stats
-**GET** `/api/data/stats/{file_id}`
-- Get advanced numeric distribution statistics
-- Returns: per-column percentiles, IQR, skewness, kurtosis, and summary metadata
-- Response includes `served_from_cache` metadata
-
-### Job Status
-**GET** `/api/jobs/{job_id}`
-- Poll background job status for async clean/AI runs
-- Returns: `status` (`pending|running|completed|failed`), `result`, and `error`
-- Failed jobs return normalized error payload: `{"type": "ExceptionClass", "message": "..."}`
-
-### Cache Policy
-- `/api/data/analyze/{file_id}` TTL: `300s`
-- `/api/data/stats/{file_id}` TTL: `300s`
-- `/api/data/ai/insights/{file_id}` TTL: `900s` (keyed by `file_id + question hash`)
-- Invalidation triggers:
-  - File deletion (`DELETE /api/data/files/{file_id}`)
-  - Cleaning completion (`POST /api/data/clean/{file_id}`)
-
-## AI Configuration
-
-Set these environment variables in your backend environment before running:
-
-```bash
-AI_API_KEY=your_api_key_here
-AI_MODEL=gpt-4o-mini
+```powershell
+conda create -p backend/.conda-py312 python=3.12 -y
+backend/.conda-py312/python.exe -m pip install -r backend/requirements-build-lock.txt
 ```
 
-Optional for OpenAI-compatible providers (Azure-compatible gateways, self-hosted endpoints, etc.):
+Outputs:
 
-```bash
-AI_BASE_URL=https://your-provider-base-url/v1
+- Desktop app EXE: `dist/csv-data-tool.exe`
+- Installer EXE: `dist/installer/TidyCSV-Setup-<version>.exe`
+
+Installer config is in `installer/tidycsv.iss`.
+Build dependency lock file is in `backend/requirements-build-lock.txt`.
+
+## Automated Release Build (GitHub Actions)
+
+The workflow in `.github/workflows/windows-release.yml` builds both EXE and installer on:
+
+- Tag push: `v*` (for example `v0.1.0`)
+- Manual run (`workflow_dispatch`)
+
+Release artifacts:
+
+- `dist/csv-data-tool.exe`
+- `dist/installer/TidyCSV-Setup-<version>.exe`
+
+## Desktop Troubleshooting
+
+- `127.0.0.1 refused to connect` after opening the app:
+  - The app does not need internet; this usually means backend startup failed.
+  - Rebuild using the pinned Python 3.12 environment command above.
+- `ModuleNotFoundError` from packaged EXE (for example `slowapi`):
+  - Re-run the installer build script from repo root to regenerate `dist/csv-data-tool.exe` with current spec settings.
+- `ImportError` involving `_ssl` on startup:
+  - Use the provided `csv-data-tool.spec` and Python 3.12 environment; OpenSSL runtime DLLs are included by that configuration.
+
+## Project Layout
+
+```text
+backend/   FastAPI app, services, API routes, tests
+frontend/  React app, components, styles, API client
+main_win.py  Desktop entry point
+TODO.md    Roadmap and sprint tracking
 ```
 
-### Download Data
-**GET** `/api/data/download/{file_id}`
-- Download processed data as CSV, JSON, or XLSX
-- Query parameter: `format` (`csv`, `json`, `xlsx`)
-- Returns: encoded content + format metadata
+## Environment Notes
 
-### File Management
-**GET** `/api/data/files`
-- List tracked file metadata (all files for anonymous use, or current user's files when authenticated)
+- Python 3.11/3.12 is recommended for best package compatibility.
+- AI integration uses environment variables such as `AI_API_KEY`, `AI_MODEL`, and optional `AI_BASE_URL`.
 
-**DELETE** `/api/data/files/{file_id}`
-- Delete tracked file metadata and in-memory dataset
+## Roadmap
 
-### Authentication
-**POST** `/api/auth/register`
-- Create a user and return bearer token
-
-**POST** `/api/auth/login`
-- Authenticate user and return bearer token
-
-**GET** `/api/auth/me`
-- Get current authenticated user details
-
-## Usage Example
-
-1. **Launch the app**: Open `http://localhost:3000` in your browser
-2. **Upload CSV**: Drag and drop or click to upload a CSV file
-3. **Review Analysis**: Check data quality metrics, visualizations, and issues
-4. **Clean Data**: Select cleaning options in logical order:
-   - Step 1: Choose columns to keep (uncheck columns to drop)
-   - Step 2: Select missing value strategy
-  - Step 3: Optionally clean string values (trim/whitespace normalization)
-  - Step 4: Optionally apply one scaling method (z-score or min-max)
-  - Step 5: Check to remove duplicates
-  - Step 6: Optionally remove outliers
-5. **Apply Cleaning**: Click "Apply Cleaning" (can repeat multiple times)
-6. **Review Results**: Check updated quality score and preview
-7. **Download**: Export the cleaned dataset
-
-### Why This Cleaning Order?
-
-The operations are executed in a specific order for optimal results:
-
-1. **Drop Columns First**: Reduces dataset size early, making subsequent operations faster
-2. **Fill Missing Values**: Handles data completeness before deduplication
-3. **Clean String Values**: Standardizes text formatting before record comparison and modeling
-4. **Apply Numeric Scaling**: Makes numeric features comparable on a consistent scale
-5. **Remove Duplicates**: Works on standardized values after text and numeric cleanup
-6. **Remove Outliers Last**: Optional step that works best on cleaned, scaled data
-
-This sequence minimizes computational overhead and produces the most reliable results.
-
-## Scalability Features
-
-This project is designed to scale:
-
-### Short-term (v0.2-v0.3)
-- ✅ Database integration foundation (SQLAlchemy + persistent metadata)
-- ✅ User authentication and file management (MVP)
-- ✅ Batch processing for large files (MVP chunked upload)
-- ✅ More statistical analysis options (q1, q3, iqr, skewness, kurtosis)
-- ✅ Data visualization with charts
-
-### Medium-term (v0.4-v0.5)
-- [ ] REST API optimization
-- [x] Caching layer (Redis) - ✅ Implemented with Redis + fakeredis fallback
-- [x] Async job queue for background processing - ✅ Implemented with `/api/jobs/{job_id}` polling; currently in-process worker
-- [ ] Multiple file format support (Excel, JSON, Parquet) - Excel/JSON complete, Parquet pending
-- [ ] Workflow/pipeline scheduling
-
-### Long-term (v1.0+)
-- Microservices architecture
-- Distributed processing (Apache Spark)
-- Real-time monitoring dashboards
-- ML-based data quality detection
-- Cloud deployment (AWS, GCP, Azure)
-
-## Development Tips
-
-### Adding New Features
-
-1. **Backend**: Add new services in `app/services/` and routes in `app/api/`
-2. **Frontend**: Create new components in `src/components/` with corresponding CSS
-
-### Testing
-
-```bash
-# Backend - create tests in backend/tests/
-pytest
-
-# Frontend - create tests in frontend/src/
-npm test
-```
-
-### Troubleshooting
-
-**CORS Issues**: Already configured in backend for development
-**Port Conflicts**: Change ports in startup commands if needed
-
-## Future Enhancements
-
-- [ ] Database integration for persistent data storage (metadata persistence is complete; full dataset persistence is pending)
-- [ ] User authentication and profiles (authentication is complete; profile management is pending)
-- [x] Advanced statistical analysis - ✅ Added advanced stats endpoint and Stats tab (percentiles, IQR, skewness, kurtosis)
-- [x] Data visualization (charts, histograms) - ✅ Basic charts implemented
-- [ ] More chart types (scatter plots, heatmaps) (heatmap is complete; scatter plots are pending)
-- [ ] Workflow automation and scheduling
-- [ ] Support for multiple file formats (Excel, JSON, Parquet) (Excel/JSON are complete; Parquet is pending)
-- [ ] Real-time collaboration features
-- [ ] API rate limiting and security (rate limiting is complete; additional security hardening is pending)
-- [x] Undo/redo functionality for cleaning operations - ✅ Implemented in DataCleaner workflow
-
-## Contributing
-
-Feel free to extend this project! Areas for contribution:
-- Additional cleaning algorithms
-- UI/UX improvements
-- Performance optimizations
-- Testing and documentation
+For current implementation status and next sprint items, see `TODO.md`.
 
 ## License
 
-MIT License - feel free to use this project for learning and development.
-
-## Support
-
-For issues or questions, check the code comments or extend with your own features!
-
----
-
-**Version**: 0.4.0  
-**Last Updated**: March 23, 2026
-
-**Recent Updates (v0.4.0)**:
-- ✅ Multi-format upload now supports CSV, XLSX, and JSON
-- ✅ API rate limiting added for upload, analysis, stats, preview, and AI endpoints
-- ✅ Correlation heatmap visualization added to analysis views
-- ✅ Undo/redo cleaning workflow implemented in `DataCleaner`
-- ✅ Advanced stats endpoint + Stats tab added (`/api/data/stats/{file_id}`)
-- ✅ Multi-format exports added (CSV, JSON, XLSX)
-- ✅ Redis caching layer added with `fakeredis` fallback for local environments
-- ✅ Async background job API added with polling endpoint (`/api/jobs/{job_id}`)
-- ✅ TidyCSV rebrand updates completed across app and docs
-
-**Previous Updates (v0.3.0 and earlier)**:
-- ✅ Ordered cleaning pipeline and improved UX flow
-- ✅ SQLAlchemy metadata persistence foundation
-- ✅ Authentication MVP (`register`, `login`, `me`)
-- ✅ Batch upload support for large CSV files
-- ✅ Desktop packaging via PyInstaller
+MIT

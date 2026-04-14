@@ -1,0 +1,75 @@
+name: Windows Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label for installer filename"
+        required: true
+        default: "0.1.0"
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup -y --no-progress
+
+      - name: Resolve build version
+        id: version
+        shell: powershell
+        run: |
+          if ("${{ github.event_name }}" -eq "push") {
+            $v = "${{ github.ref_name }}".TrimStart("v")
+          } else {
+            $v = "${{ inputs.version }}"
+          }
+          echo "value=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Build EXE and installer
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-installer.ps1 -PythonExe python -Version ${{ steps.version.outputs.value }}
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidycsv-exe-${{ steps.version.outputs.value }}
+          path: dist/csv-data-tool.exe
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidycsv-installer-${{ steps.version.outputs.value }}
+          path: dist/installer/TidyCSV-Setup-${{ steps.version.outputs.value }}.exe
+
+      - name: Publish release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/csv-data-tool.exe
+            dist/installer/TidyCSV-Setup-${{ steps.version.outputs.value }}.exe
